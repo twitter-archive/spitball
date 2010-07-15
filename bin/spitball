@@ -16,7 +16,7 @@ opts = OptionParser.new do |opts|
     args[:host] = host
   end
 
-  opts.on('-p', '--port PORT', 'Specify the remote server port') do |port|
+  opts.on('-p', '--port PORT', 'Specify the remote server port. Default 8080') do |port|
     args[:port] = port
   end
 
