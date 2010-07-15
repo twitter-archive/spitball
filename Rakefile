@@ -13,15 +13,22 @@ Spec::Rake::SpecTask.new(:spec) do |t|
 end
 
 # gemification with jeweler
+# FIXME: stop using jeweler when I get smarter.
 begin
   require 'jeweler'
-  Jeweler::Tasks.new do |gemspec|
-    gemspec.name = "spitball"
-    gemspec.summary = "get a bundle"
-    gemspec.description = "Use bundler to generate gem tarball packages."
-    gemspec.email = "freels@twitter.com"
-    gemspec.homepage = "http://twitter.com"
-    gemspec.authors = ["Matt Freels", "Brandon Mitchell"]
+  Jeweler::Tasks.new do |gem|
+    gem.name = "spitball"
+    gem.summary = "get a bundle"
+    gem.description = "Use bundler to generate gem tarball packages."
+    gem.email = "freels@twitter.com"
+    gem.homepage = "http://twitter.com"
+    gem.authors = ["Matt Freels", "Brandon Mitchell"]
+
+    gem.add_dependency 'bundler', '>= 0.9.5'
+    gem.add_dependency 'sinatra', '>= 1.0'
+
+    gem.add_development_dependency 'rspec'
+    gem.add_development_dependency 'rr'
   end
 rescue LoadError
   puts "Jeweler not available. Install it with: gem install jeweler"
