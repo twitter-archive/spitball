@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{spitball}
-  s.version = "0.1.0"
+  s.version = "0.1.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Matt Freels", "Brandon Mitchell"]
@@ -13,15 +13,23 @@ Gem::Specification.new do |s|
   s.description = %q{Use bundler to generate gem tarball packages.}
   s.email = %q{freels@twitter.com}
   s.executables = ["spitball", "spitball-server"]
+  s.extra_rdoc_files = [
+    "README"
+  ]
   s.files = [
-    "Gemfile.sample",
+    ".gitignore",
+     "Gemfile.sample",
+     "README",
+     "Rakefile",
+     "VERSION",
      "bin/spitball",
      "bin/spitball-server",
      "lib/spitball.rb",
      "lib/spitball/digest.rb",
      "lib/spitball/file_lock.rb",
      "lib/spitball/remote.rb",
-     "lib/spitball/repo.rb"
+     "lib/spitball/repo.rb",
+     "spitball.gemspec"
   ]
   s.homepage = %q{http://twitter.com}
   s.rdoc_options = ["--charset=UTF-8"]
@@ -34,9 +42,21 @@ Gem::Specification.new do |s|
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
+      s.add_runtime_dependency(%q<bundler>, [">= 0.9.5"])
+      s.add_runtime_dependency(%q<sinatra>, [">= 1.0"])
+      s.add_development_dependency(%q<rspec>, [">= 0"])
+      s.add_development_dependency(%q<rr>, [">= 0"])
     else
+      s.add_dependency(%q<bundler>, [">= 0.9.5"])
+      s.add_dependency(%q<sinatra>, [">= 1.0"])
+      s.add_dependency(%q<rspec>, [">= 0"])
+      s.add_dependency(%q<rr>, [">= 0"])
     end
   else
+    s.add_dependency(%q<bundler>, [">= 0.9.5"])
+    s.add_dependency(%q<sinatra>, [">= 1.0"])
+    s.add_dependency(%q<rspec>, [">= 0"])
+    s.add_dependency(%q<rr>, [">= 0"])
   end
 end
 
