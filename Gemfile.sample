@@ -1,0 +1,7 @@
+source :rubygems
+
+gem 'mysql'
+gem 'json'
+
+gem 'activesupport'
+

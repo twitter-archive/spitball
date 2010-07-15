@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+
+require 'spitball'
+require 'optparse'
+require 'net/http'
+require 'fileutils'
+
+args = {}
+
+opts = OptionParser.new do |opts|
+  opts.banner = "Usage: spitball [options] GEMFILE ARCHIVE"
+
+  opts.separator ""
+  opts.separator "options:"
+
+  opts.on('-h', '--host HOST', 'Get the tarball from a remote spitball server') do |h|
+    args[:host] = h
+  end
+
+  opts.on('--version') do
+    puts Spitball::VERSION
+    exit
+  end
+end
+
+opts.permute!(ARGV)
+
+args[:gemfile] = ARGV[0]
+args[:destination] = ARGV[1]
+
+unless args[:gemfile] and args[:destination]
+  puts opts.help
+  exit 1
+end
+
+gemfile = File.read(args[:gemfile])
+
+ball = args[:host] ? Spitball::Remote.new(gemfile, host) : Spitball.new(gemfile)
+ball.copy_to args[:destination]

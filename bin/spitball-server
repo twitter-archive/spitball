@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+
+require 'spitball'
+require 'sinatra'
+require 'json'
+
+mime_type :gemfile, 'text/plain'
+mime_type :tgz, 'application/x-compressed'
+
+# return json array of cached SHAs
+get '/list' do
+  content_type :json
+  JSON.dump Spitball.list_cached
+end
+
+# return tgz or gemfile of cached SHA or 404
+get '/:digest.:format' do |digest, format|
+  error 400 unless ['tgz', 'gemfile'].include? format
+
+  # this returns 404 on Errno::ENOENT
+  send_file Spitball.path(digest, format), :type => format
+end
+
+# POST a gemfile. Returns 201 Created if the bundle already exists, or 202 Accepted if it does not. The body of the response is the URI for the tarball.
+post '/create' do
+  p request.body.read
+  request.body.rewind
+  ball = Spitball.new(request.body.read)
+  url = "#{request.url.split("/create").first}/#{ball.digest}.tgz"
+  response['Location'] = url
+
+  if ball.cached?
+    status 201
+  else
+    status 202
+    fork { ball.cache! }
+  end
+
+  url
+end
