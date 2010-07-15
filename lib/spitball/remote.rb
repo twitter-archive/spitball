@@ -3,9 +3,10 @@ require 'uri'
 
 class Spitball::Remote
 
-  def initialize(gemfile, host)
+  def initialize(gemfile, host, port)
     @gemfile = gemfile
     @host = host
+    @port = port
   end
 
   def copy_to(path)
@@ -15,7 +16,7 @@ class Spitball::Remote
   end
 
   def get_tarball_data
-    url = URI.parse("http://#{@host}/create")
+    url = URI.parse("http://#{@host}:#{@port}/create")
     res = Net::HTTP.start(url.host, url.port) do |http|
       http.post(url.path, @gemfile)
     end

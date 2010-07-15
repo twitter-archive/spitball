@@ -9,21 +9,25 @@ args = {}
 
 opts = OptionParser.new do |opts|
   opts.banner = "Usage: spitball [options] GEMFILE ARCHIVE"
-
   opts.separator ""
   opts.separator "options:"
 
-  opts.on('-h', '--host HOST', 'Get the tarball from a remote spitball server') do |h|
-    args[:host] = h
+  opts.on('-h', '--host HOST', 'Get the tarball from a remote spitball server') do |host|
+    args[:host] = host
+  end
+
+  opts.on('-p', '--port PORT', 'Specify the remote server port') do |port|
+    args[:port] = port
   end
 
   opts.on('--version') do
     puts Spitball::VERSION
-    exit
+    exit 0
   end
 end
 
 opts.permute!(ARGV)
+
 
 args[:gemfile] = ARGV[0]
 args[:destination] = ARGV[1]
@@ -35,5 +39,8 @@ end
 
 gemfile = File.read(args[:gemfile])
 
-ball = args[:host] ? Spitball::Remote.new(gemfile, args[:host]) : Spitball.new(gemfile)
+ball = args[:host] ?
+  Spitball::Remote.new(gemfile, args[:host], (args[:port] || 8080).to_i) :
+  Spitball.new(gemfile)
+
 ball.copy_to args[:destination]
