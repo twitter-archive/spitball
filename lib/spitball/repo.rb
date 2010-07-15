@@ -1,7 +1,7 @@
 module Spitball::Repo
   extend self
 
-  WORKING_DIR = ENV['SPITBALL_DIR'] || '/tmp/spitball'
+  WORKING_DIR = ENV['SPITBALL_CACHE'] || '/tmp/spitball'
 
   def path(digest, extension = nil)
     extension = ".#{extension}" unless extension.nil? or extension.empty?
