@@ -7,6 +7,7 @@ class Spitball
   require 'spitball/remote'
 
   class SpitballServerFailure < StandardError; end
+  class SpitballClientFailure < StandardError; end
   class BundleCreationFailure < StandardError; end
 
   VERSION = '1.0'

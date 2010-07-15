@@ -33,6 +33,8 @@ class Spitball::Remote
     else
       raise SpitballServerFailure, "Expected 2xx response code. Got #{res.code}."
     end
+  rescue URI::InvalidURIError => e
+    raise SpitballClientError, e.message
   end
 
 end
