@@ -6,6 +6,9 @@ class Spitball
   require 'spitball/file_lock'
   require 'spitball/remote'
 
+  class SpitballServerFailure < StandardError; end
+  class BundleCreationFailure < StandardError; end
+
   VERSION = '1.0'
 
   include Spitball::Digest
@@ -54,7 +57,7 @@ class Spitball
 
     else
       FileUtils.rm_rf gemfile_path
-      raise "Bundle build failure."
+      raise BundleCreationFailure, "Bundle build failure."
     end
 
     FileUtils.rm_rf bundle_path
