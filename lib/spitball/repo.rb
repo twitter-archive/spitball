@@ -18,7 +18,7 @@ module Spitball::Repo
 
   def list_cached
     Dir[File.join(WORKING_DIR, 'bundle_*.tgz')].map do |path|
-      path.match(/^bundle_.*?\.tgz$/)[1] rescue nil
+      path.match(/bundle_(.*?)\.tgz$/)[1]
     end.compact.uniq.sort
   end
 

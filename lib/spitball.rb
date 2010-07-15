@@ -4,6 +4,7 @@ class Spitball
   require 'spitball/digest'
   require 'spitball/repo'
   require 'spitball/file_lock'
+  require 'spitball/remote'
 
   VERSION = '1.0'
 

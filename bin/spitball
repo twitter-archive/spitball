@@ -35,5 +35,5 @@ end
 
 gemfile = File.read(args[:gemfile])
 
-ball = args[:host] ? Spitball::Remote.new(gemfile, host) : Spitball.new(gemfile)
+ball = args[:host] ? Spitball::Remote.new(gemfile, args[:host]) : Spitball.new(gemfile)
 ball.copy_to args[:destination]
