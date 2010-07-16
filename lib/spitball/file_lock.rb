@@ -6,8 +6,7 @@ module Spitball::FileLock
 
     File.open(pre_lock_path, 'w') {|f| f.write Process.pid }
 
-    # is this atomic?
-    system "mv -n #{pre_lock_path} #{lock_path}"
+    system "ln #{pre_lock_path} #{lock_path} > /dev/null 2>&1"
     File.read(lock_path).to_i == Process.pid
   ensure
     FileUtils.rm_f pre_lock_path
