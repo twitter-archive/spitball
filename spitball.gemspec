@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{spitball}
-  s.version = "0.1.1"
+  s.version = "0.1.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Matt Freels", "Brandon Mitchell"]
-  s.date = %q{2010-07-15}
+  s.date = %q{2010-07-16}
   s.description = %q{Use bundler to generate gem tarball packages.}
   s.email = %q{freels@twitter.com}
   s.executables = ["spitball", "spitball-server"]
