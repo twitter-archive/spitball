@@ -15,10 +15,11 @@ class Spitball
   include Spitball::Digest
   include Spitball::FileLock
 
-  attr_reader :gemfile
+  attr_reader :gemfile, :options
 
-  def initialize(gemfile)
+  def initialize(gemfile, options = {})
     @gemfile = gemfile
+    @options = options
   end
 
   def copy_to(dest)
@@ -50,7 +51,7 @@ class Spitball
     File.open(gemfile_path, 'w') {|f| f.write gemfile }
     FileUtils.mkdir_p bundle_path
 
-    if system "bundle install #{bundle_path} --gemfile=#{gemfile_path} --disable-shared-gems > /dev/null"
+    if system "bundle install #{bundle_path} --gemfile=#{gemfile_path} --disable-shared-gems #{without_clause} > /dev/null"
       FileUtils.rm_rf File.join(bundle_path, "cache")
 
       system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
@@ -62,6 +63,13 @@ class Spitball
     end
 
     FileUtils.rm_rf bundle_path
+  end
+
+  def without_clause
+    without = options[:without] || []
+    return '' if without.empty?
+
+    "--without=#{without.join(',')}"
   end
 
   # Paths

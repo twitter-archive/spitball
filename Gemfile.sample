@@ -1,7 +1,9 @@
 source :rubygems
 
-gem 'mysql'
-gem 'json'
+group "native" do
+  gem 'mysql'
+  gem 'json'
+end
 
 gem 'activesupport'
 
