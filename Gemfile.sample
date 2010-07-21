@@ -6,4 +6,3 @@ group "native" do
 end
 
 gem 'activesupport'
-

@@ -1,12 +1,14 @@
+SPEC_DIR = File.dirname(__FILE__)
+
+SPITBALL_CACHE = ENV['SPITBALL_CACHE'] = File.expand_path('cache', SPEC_DIR)
+
+$: << File.expand_path("../lib", SPEC_DIR)
+
 require 'rubygems'
 require 'fileutils'
 require 'spec'
+require 'spitball'
 
-spec_dir = File.dirname(__FILE__)
-
-ENV['SPITBALL_CACHE'] = File.expand_path('cache', spec_dir)
-
-$: << File.expand_path("../lib", spec_dir)
 
 Spec::Runner.configure do |config|
   config.mock_with :rr
@@ -19,6 +21,9 @@ Spec::Runner.configure do |config|
   end
 end
 
+
+# helper methods
+
 def purge_test_cache
-  FileUtils.rm_rf ENV['SPITBALL_CACHE']
+  FileUtils.rm_rf SPITBALL_CACHE
 end
