@@ -48,17 +48,18 @@ class Spitball
   end
 
   def create_bundle
-    File.open(gemfile_path, 'w') {|f| f.write gemfile }
     FileUtils.mkdir_p bundle_path
 
-    if system "bundle install #{bundle_path} --gemfile=#{gemfile_path} --disable-shared-gems #{without_clause} > /dev/null"
+    File.open(gemfile_path, 'w') {|f| f.write gemfile }
+
+    if system "cd #{bundle_path} && bundle install #{bundle_path} --disable-shared-gems #{without_clause} > /dev/null"
       FileUtils.rm_rf File.join(bundle_path, "cache")
 
       system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
       system "mv #{tarball_path}.#{Process.pid} #{tarball_path}"
 
     else
-      FileUtils.rm_rf gemfile_path
+      #FileUtils.rm_rf gemfile_path
       raise BundleCreationFailure, "Bundle build failure."
     end
 
@@ -79,7 +80,7 @@ class Spitball
   end
 
   def gemfile_path
-    Repo.path(digest, 'gemfile')
+    File.expand_path('Gemfile', bundle_path)
   end
 
   def tarball_path
