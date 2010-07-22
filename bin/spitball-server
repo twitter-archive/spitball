@@ -1,8 +1,23 @@
 #!/usr/bin/env ruby
 
 require 'spitball'
+require 'optparse'
 require 'sinatra'
 require 'json'
+
+# cargo culting sinatra's option parser, since it has trouble
+# with rubygem stub files
+
+OptionParser.new { |op|
+  op.on('-x')        {       set :lock, true }
+  op.on('-e env')    { |val| set :environment, val.to_sym }
+  op.on('-s server') { |val| set :server, val }
+  op.on('-p port')   { |val| set :port, val.to_i }
+  op.on('-o addr')   { |val| set :bind, val }
+}.parse!(ARGV.dup)
+
+# always run
+set :run, true
 
 mime_type :gemfile, 'text/plain'
 mime_type :tgz, 'application/x-compressed'
