@@ -1,7 +1,18 @@
 require 'spec/spec_helper'
 
 describe Spitball do
-  it "works" do
+  describe "without_clause" do
+    it "returns a --without bundler option if :without is set" do
+      Spitball.new('gemfile', :without => "system").without_clause.should == '--without=system'
+    end
+
+    it "returns an empty string if without is not set" do
+      Spitball.new('gemfile').without_clause.should == ''
+    end
+
+    it "allows multiple groups" do
+      Spitball.new('gemfile', :without => ["system", "test"]).without_clause.should == '--without=system,test'
+    end
   end
 end
 

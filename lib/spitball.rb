@@ -67,7 +67,7 @@ class Spitball
   end
 
   def without_clause
-    without = options[:without] || []
+    without = Array(options[:without] || [])
     return '' if without.empty?
 
     "--without=#{without.join(',')}"
