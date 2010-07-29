@@ -92,3 +92,18 @@ describe Spitball::Repo do
     end
   end
 end
+
+describe Spitball::Digest do
+  it "generates a digest based on the spitball's options and gemfile" do
+    [Spitball.new('gemfile contents', :without => "system").digest,
+     Spitball.new('gemfile contents 2', :without => "system").digest,
+     Spitball.new('gemfile', :without => "other_group").digest,
+     Spitball.new('gemfile').digest
+    ].uniq.length.should == 4
+  end
+
+  it "provides a hash equal to the digest's hash"do
+    spitball = Spitball.new('gemfile contents')
+    spitball.hash.should == spitball.digest.hash
+  end
+end
