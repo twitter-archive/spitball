@@ -13,7 +13,6 @@ class Spitball
   VERSION = '1.0'
 
   include Spitball::Digest
-  include Spitball::FileLock
 
   attr_reader :gemfile, :options
 
@@ -35,11 +34,13 @@ class Spitball
     Spitball::Repo.make_cache_dir
 
     unless cached?
-      if acquire_lock bundle_path('lock')
+      lock = Spitball::FileLock.new(bundle_path('lock'))
+
+      if lock.acquire_lock
         begin
           create_bundle
         ensure
-          release_lock bundle_path('lock')
+          lock.release_lock
         end
       elsif sync
         sleep 0.1 until cached?

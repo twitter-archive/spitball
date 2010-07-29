@@ -23,25 +23,25 @@ describe Spitball do
   describe "cache!" do
     it "returns if the spitball is cached" do
       mock(@spitball).cached? { true }
-      mock(@spitball).acquire_lock(anything).never
-      mock(@spitball).release_lock(anything).never
+      mock.instance_of(Spitball::FileLock).acquire_lock.never
+      mock.instance_of(Spitball::FileLock).release_lock.never
       mock(@spitball).create_bundle(anything).never
 
       @spitball.cache!
     end
 
     it "creates the bundle if it acquires the lock" do
-      mock(@spitball).acquire_lock(anything) { true }
+      mock.instance_of(Spitball::FileLock).acquire_lock { true }
       mock(@spitball).create_bundle
-      mock(@spitball).release_lock(anything)
+      mock.instance_of(Spitball::FileLock).release_lock
 
       @spitball.cache!
     end
 
     it "does not create the bundle if it does not acquire the lock" do
-      mock(@spitball).acquire_lock(anything) { false }
+      mock.instance_of(Spitball::FileLock).release_lock.never
+      mock.instance_of(Spitball::FileLock).acquire_lock { false }
       mock(@spitball).create_bundle.never
-      mock(@spitball).release_lock(anything).never
 
       @spitball.cache!(false)
     end
@@ -50,7 +50,7 @@ describe Spitball do
       cached = false
       done_caching = false
 
-      mock(@spitball).acquire_lock(anything) { false }
+      mock.instance_of(Spitball::FileLock).acquire_lock { false }
       stub(@spitball).cached? { cached }
 
       t = Thread.new do
@@ -98,23 +98,22 @@ describe Spitball do
 end
 
 describe Spitball::FileLock do
-  include Spitball::FileLock
-
   describe "acquire_lock" do
     before do
       Spitball::Repo.make_cache_dir
       @lock_path = File.expand_path('test.lock', SPITBALL_CACHE)
+      @lock = Spitball::FileLock.new(@lock_path)
     end
 
     it "returns true if the lock is acquired" do
-      acquire_lock(@lock_path).should == true
+      @lock.acquire_lock.should == true
     end
 
     it "returns false if the lock is not acquired" do
-      fork { acquire_lock(@lock_path); exit! }
+      fork { @lock.acquire_lock; exit! }
       Process.wait
 
-      acquire_lock(@lock_path).should == false
+      @lock.acquire_lock.should == false
     end
   end
 end
