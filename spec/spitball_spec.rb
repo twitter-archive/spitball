@@ -28,8 +28,14 @@ describe Spitball::FileLock do
 end
 
 describe Spitball::Repo do
+  before do
+    Spitball::Repo.make_cache_dir
+  end
+
   describe "make_cache_dir" do
     it "creates the correct cache dir" do
+      FileUtils.rm_rf(SPITBALL_CACHE)
+
       File.exist?(SPITBALL_CACHE).should_not == true
       Spitball::Repo.make_cache_dir
       File.exist?(SPITBALL_CACHE).should == true
@@ -47,6 +53,31 @@ describe Spitball::Repo do
 
     it "generates paths prefixed with bundle_" do
       Spitball::Repo.path('digest', 'tgz').should =~ %r[bundle_digest\.tgz$]
+    end
+  end
+
+  describe "exist?" do
+    it "returns true if tarball for a digest has been exists" do
+      Spitball::Repo.exist?('digest').should_not == true
+      File.open(Spitball::Repo.path('digest', 'tgz'), 'w') {|f| f.write 'tarball!' }
+      Spitball::Repo.exist?('digest').should == true
+    end
+  end
+
+  describe "gemfile" do
+    it "returns the contents of the cached gemfile for a digest" do
+      gemfile = 'gem :memcached'
+      File.open(Spitball::Repo.path('digest', 'gemfile'), 'w') {|f| f.write gemfile }
+      Spitball::Repo.gemfile('digest').should == gemfile
+    end
+  end
+
+  describe "list_cached" do
+    it "returns a list of cached bundles" do
+      File.open(Spitball::Repo.path('digest', 'tgz'), 'w') {|f| f.write 'tarball!' }
+      File.open(Spitball::Repo.path('digest2', 'tgz'), 'w') {|f| f.write 'tarball2!' }
+
+      Spitball::Repo.list_cached.should == ['digest', 'digest2']
     end
   end
 end
