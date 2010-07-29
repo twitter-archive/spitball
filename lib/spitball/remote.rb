@@ -3,6 +3,8 @@ require 'uri'
 
 class Spitball::Remote
 
+  WAIT_SECONDS = 30
+
   def initialize(gemfile, host, port)
     @gemfile = gemfile
     @host = host
@@ -25,12 +27,14 @@ class Spitball::Remote
     when '201' # Created
       Net::HTTP.get(URI.parse(res['Location']))
     when '202' # Accepted
-      loop do
+      (WAIT_SECONDS / 2).times do
         sleep 2
         try = Net::HTTP.get_response(URI.parse(res['Location']))
         next if try.code != '200'
         return try.body
       end
+
+      raise SpitballServerFailure, "Spitball build timed out. The build failed or it's just taking a while..."
     else
       raise SpitballServerFailure, "Expected 2xx response code. Got #{res.code}."
     end
