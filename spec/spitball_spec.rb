@@ -1,6 +1,87 @@
 require 'spec/spec_helper'
 
 describe Spitball do
+  before do
+    use_success_bundler
+
+    @gemfile = <<-end_gemfile
+        source :rubygems
+        gem "activerecord"
+      end_gemfile
+
+    @spitball = Spitball.new(@gemfile)
+  end
+
+  describe "cached?" do
+    it "returns true if the tarball has already been cached" do
+      @spitball.should_not be_cached
+      @spitball.cache!
+      @spitball.should be_cached
+    end
+  end
+
+  describe "cache!" do
+    it "returns if the spitball is cached" do
+      mock(@spitball).cached? { true }
+      mock(@spitball).acquire_lock(anything).never
+      mock(@spitball).release_lock(anything).never
+      mock(@spitball).create_bundle(anything).never
+
+      @spitball.cache!
+    end
+
+    it "creates the bundle if it acquires the lock" do
+      mock(@spitball).acquire_lock(anything) { true }
+      mock(@spitball).create_bundle
+      mock(@spitball).release_lock(anything)
+
+      @spitball.cache!
+    end
+
+    it "does not create the bundle if it does not acquire the lock" do
+      mock(@spitball).acquire_lock(anything) { false }
+      mock(@spitball).create_bundle.never
+      mock(@spitball).release_lock(anything).never
+
+      @spitball.cache!(false)
+    end
+
+    it "blocks if it does not acquire the lock and sync is true (default)" do
+      cached = false
+      done_caching = false
+
+      mock(@spitball).acquire_lock(anything) { false }
+      stub(@spitball).cached? { cached }
+
+      t = Thread.new do
+        @spitball.cache!
+        done_caching = true
+      end
+
+      sleep 0.5
+      done_caching.should_not == true
+
+      cached = true
+      t.join
+      done_caching.should == true
+    end
+  end
+
+  describe "create_bundle" do
+    it "generates a bundle at the bundle_path" do
+      @spitball.create_bundle
+
+      File.exist?(@spitball.tarball_path).should == true
+    end
+
+    it "raises an exception if bundle creation fails" do
+      use_fail_bundler
+
+      lambda { @spitball.create_bundle }.should raise_error(Spitball::BundleCreationFailure)
+      File.exist?(@spitball.tarball_path).should_not == true
+    end
+  end
+
   describe "without_clause" do
     it "returns a --without bundler option if :without is set" do
       Spitball.new('gemfile', :without => "system").without_clause.should == '--without=system'
