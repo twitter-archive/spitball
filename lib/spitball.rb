@@ -53,13 +53,9 @@ class Spitball
     File.open(gemfile_path, 'w') {|f| f.write gemfile }
 
     if system "cd #{bundle_path} && bundle install #{bundle_path} --disable-shared-gems #{without_clause}"
-      FileUtils.rm_rf File.join(bundle_path, "cache")
-
       system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
       system "mv #{tarball_path}.#{Process.pid} #{tarball_path}"
-
     else
-      #FileUtils.rm_rf gemfile_path
       raise BundleCreationFailure, "Bundle build failure."
     end
 
