@@ -52,7 +52,7 @@ class Spitball
 
     File.open(gemfile_path, 'w') {|f| f.write gemfile }
 
-    if system "cd #{bundle_path} && bundle install #{bundle_path} --disable-shared-gems #{without_clause} > /dev/null"
+    if system "cd #{bundle_path} && bundle install #{bundle_path} --disable-shared-gems #{without_clause}"
       FileUtils.rm_rf File.join(bundle_path, "cache")
 
       system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
