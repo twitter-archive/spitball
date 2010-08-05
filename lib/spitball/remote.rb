@@ -33,12 +33,12 @@ class Spitball::Remote
         return try.body
       end
 
-      raise SpitballServerFailure, "Spitball build timed out. The build failed or it's just taking a while..."
+      raise Spitball::ServerFailure, "Spitball build timed out. The build failed or it's just taking a while..."
     else
-      raise SpitballServerFailure, "Expected 2xx response code. Got #{res.code}."
+      raise Spitball::ServerFailure, "Expected 2xx response code. Got #{res.code}."
     end
   rescue URI::InvalidURIError => e
-    raise SpitballClientError, e.message
+    raise Spitball::ClientError, e.message
   end
 
 end

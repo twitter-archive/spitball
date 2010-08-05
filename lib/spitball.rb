@@ -6,8 +6,8 @@ class Spitball
   require 'spitball/file_lock'
   require 'spitball/remote'
 
-  class SpitballServerFailure < StandardError; end
-  class SpitballClientFailure < StandardError; end
+  class ServerFailure < StandardError; end
+  class ClientFailure < StandardError; end
   class BundleCreationFailure < StandardError; end
 
   VERSION = '1.0'
