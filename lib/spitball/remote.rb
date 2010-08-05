@@ -12,9 +12,8 @@ class Spitball::Remote
   end
 
   def copy_to(path)
-    File.open(path, 'w') do |f|
-      f.write get_tarball_data
-    end
+    data = get_tarball_data
+    File.open(path, 'w') { |f| f.write data }
   end
 
   def get_tarball_data
