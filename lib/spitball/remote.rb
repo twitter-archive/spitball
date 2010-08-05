@@ -3,7 +3,7 @@ require 'uri'
 
 class Spitball::Remote
 
-  WAIT_SECONDS = 30
+  WAIT_SECONDS = 240
 
   def initialize(gemfile, host, port)
     @gemfile = gemfile
