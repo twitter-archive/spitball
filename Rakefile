@@ -21,7 +21,7 @@ begin
     gem.summary = "get a bundle"
     gem.description = "Use bundler to generate gem tarball packages."
     gem.email = "freels@twitter.com"
-    gem.homepage = "http://twitter.com"
+    gem.homepage = "http://github.com/freels/spitball"
     gem.authors = ["Matt Freels", "Brandon Mitchell"]
 
     gem.add_dependency 'bundler', '>= 0.9.5'

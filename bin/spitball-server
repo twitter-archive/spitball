@@ -25,7 +25,7 @@ mime_type :tgz, 'application/x-compressed'
 # return json array of cached SHAs
 get '/list' do
   content_type :json
-  JSON.dump Spitball::Repo.list_cached
+  JSON.dump Spitball::Repo.cached_digests
 end
 
 # return tgz or gemfile of cached SHA or 404

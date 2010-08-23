@@ -148,27 +148,49 @@ describe Spitball::Repo do
   end
 
   describe "exist?" do
-    it "returns true if tarball for a digest has been exists" do
+    it "returns true if tarball for a digest exists" do
       Spitball::Repo.exist?('digest').should_not == true
       File.open(Spitball::Repo.path('digest', 'tgz'), 'w') {|f| f.write 'tarball!' }
       Spitball::Repo.exist?('digest').should == true
     end
   end
 
-  describe "gemfile" do
-    it "returns the contents of the cached gemfile for a digest" do
-      gemfile = 'gem :memcached'
-      File.open(Spitball::Repo.path('digest', 'gemfile'), 'w') {|f| f.write gemfile }
-      Spitball::Repo.gemfile('digest').should == gemfile
+  describe "tarball" do
+    it "returns the path of the cached tarball for a digest" do
+      Spitball::Repo.tarball('digest').should == Spitball::Repo.path('digest', 'tgz')
     end
   end
 
-  describe "list_cached" do
-    it "returns a list of cached bundles" do
-      File.open(Spitball::Repo.path('digest', 'tgz'), 'w') {|f| f.write 'tarball!' }
-      File.open(Spitball::Repo.path('digest2', 'tgz'), 'w') {|f| f.write 'tarball2!' }
+  describe "gemfile" do
+    it "returns the path of the cached gemfile for a digest" do
+      Spitball::Repo.gemfile('digest').should == Spitball::Repo.path('digest', 'gemfile')
+    end
+  end
 
-      Spitball::Repo.list_cached.should == ['digest', 'digest2']
+  describe "cached_digests" do
+    it "returns a list of cached bundles" do
+      File.open(Spitball::Repo.tarball('digest'), 'w') {|f| f.write 'tarball!' }
+      File.open(Spitball::Repo.tarball('digest2'), 'w') {|f| f.write 'tarball2!' }
+
+      Spitball::Repo.cached_digests.should == ['digest', 'digest2']
+    end
+  end
+
+  describe "clean_up_unused" do
+    it "removes cached tarballs and gemfiles that haven't been accessed within a certain period" do
+      File.open(Spitball::Repo.tarball('digest'), 'w') {|f| f.write 'tarball!' }
+      File.open(Spitball::Repo.gemfile('digest'), 'w') {|f| f.write 'gemfile!' }
+
+      sleep 2
+      File.open(Spitball::Repo.tarball('digest2'), 'w') {|f| f.write 'tarball2!' }
+      File.open(Spitball::Repo.gemfile('digest2'), 'w') {|f| f.write 'gemfile2!' }
+
+      Spitball::Repo.clean_up_unused(1)
+
+      File.exist?(Spitball::Repo.tarball('digest')).should_not == true
+      File.exist?(Spitball::Repo.gemfile('digest')).should_not == true
+      File.exist?(Spitball::Repo.tarball('digest2')).should == true
+      File.exist?(Spitball::Repo.gemfile('digest2')).should == true
     end
   end
 end
