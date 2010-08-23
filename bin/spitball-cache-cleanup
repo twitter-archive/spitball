@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+
+require 'spitball'
+require 'optparse'
+
+args = {}
+
+opts = OptionParser.new do |opts|
+  opts.banner = "Usage: spitball-cache-cleanup [options]"
+  opts.separator ""
+  opts.separator "options:"
+
+  opts.on('-w', '--access-window SECONDS', 'Access window within which tarballs are kept. Default 30 days') do |access_window|
+    args[:access_window] = access_window
+  end
+end
+
+opts.permute!(ARGV)
+
+args[:access_window] ||= 2592000
+
+Spitball::Repo.clean_up_unused(args[:access_window].to_i)
