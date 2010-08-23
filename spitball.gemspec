@@ -5,14 +5,14 @@
 
 Gem::Specification.new do |s|
   s.name = %q{spitball}
-  s.version = "0.2.1"
+  s.version = "0.2.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Matt Freels", "Brandon Mitchell"]
-  s.date = %q{2010-08-05}
+  s.date = %q{2010-08-23}
   s.description = %q{Use bundler to generate gem tarball packages.}
   s.email = %q{freels@twitter.com}
-  s.executables = ["spitball", "spitball-server"]
+  s.executables = ["spitball", "spitball-cache-cleanup", "spitball-server"]
   s.extra_rdoc_files = [
     "README.md"
   ]
@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
      "Rakefile",
      "VERSION",
      "bin/spitball",
+     "bin/spitball-cache-cleanup",
      "bin/spitball-server",
      "lib/spitball.rb",
      "lib/spitball/digest.rb",
@@ -34,7 +35,7 @@ Gem::Specification.new do |s|
      "spec/spitball_spec.rb",
      "spitball.gemspec"
   ]
-  s.homepage = %q{http://twitter.com}
+  s.homepage = %q{http://github.com/freels/spitball}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.7}
