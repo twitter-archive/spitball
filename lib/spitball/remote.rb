@@ -12,33 +12,48 @@ class Spitball::Remote
   end
 
   def copy_to(path)
-    data = get_tarball_data
+    data = generate_remote_tarball
     File.open(path, 'w') { |f| f.write data }
   end
 
-  def get_tarball_data
+  private
+
+  def generate_remote_tarball
     url = URI.parse("http://#{@host}:#{@port}/create")
     res = Net::HTTP.start(url.host, url.port) do |http|
-      http.post(url.path, @gemfile)
+      http.post(url.path, @gemfile) do |body|
+        print body
+      end
     end
 
-    case res.code
-    when '201' # Created
-      Net::HTTP.get(URI.parse(res['Location']))
-    when '202' # Accepted
-      (WAIT_SECONDS / 2).times do
-        sleep 2
-        try = Net::HTTP.get_response(URI.parse(res['Location']))
-        next if try.code != '200'
-        return try.body
+    print "\nDownloading tarball..."; $stdout.flush
+
+    data =
+      case res.code
+      when '201', '202' # Created, Accepted
+        get_tarball_data res['Location']
+      else
+        raise Spitball::ServerFailure, "Expected 2xx response code. Got #{res.code}."
       end
 
-      raise Spitball::ServerFailure, "Spitball build timed out. The build failed or it's just taking a while..."
-    else
-      raise Spitball::ServerFailure, "Expected 2xx response code. Got #{res.code}."
-    end
+    puts "done."
+
+    data
   rescue URI::InvalidURIError => e
     raise Spitball::ClientError, e.message
   end
 
+  def get_tarball_data(location)
+    uri = URI.parse(location)
+
+    (WAIT_SECONDS / 2).times do
+      if (res = Net::HTTP.get_response(uri)).code == '200'
+        return res.body
+      else
+        sleep 2
+      end
+    end
+
+    raise Spitball::ServerFailure, "Spitball download timed out."
+  end
 end

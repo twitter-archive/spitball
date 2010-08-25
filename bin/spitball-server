@@ -36,20 +36,32 @@ get '/:digest.:format' do |digest, format|
   send_file Spitball::Repo.path(digest, format), :type => format
 end
 
-# POST a gemfile. Returns 201 Created if the bundle already exists, or 202 Accepted if it does not. The body of the response is the URI for the tarball.
+class Streamer
+  def initialize(io); @io = io end
+  def each; while buf = @io.read(200); yield buf end end
+end
+
+# POST a gemfile. Returns 201 Created if the bundle already exists, or
+# 202 Accepted if it does not. The body of the response is the URI for
+# the tarball.
 post '/create' do
-  p request.body.read
-  request.body.rewind
   ball = Spitball.new(request.body.read)
   url = "#{request.url.split("/create").first}/#{ball.digest}.tgz"
   response['Location'] = url
 
   if ball.cached?
     status 201
+    "Bundle tarball pre-cached.\n"
   else
     status 202
-    fork { ball.cache! }
-  end
 
-  url
+    pid = open("|-")
+
+    if pid == nil # child
+      ball.cache!
+      exit!
+    end
+
+    Streamer.new(pid)
+  end
 end
