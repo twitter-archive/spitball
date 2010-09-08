@@ -7,7 +7,7 @@ class Spitball
   require 'spitball/remote'
 
   class ServerFailure < StandardError; end
-  class ClientFailure < StandardError; end
+  class ClientError < StandardError; end
   class BundleCreationFailure < StandardError; end
 
   VERSION = '1.0'
@@ -54,6 +54,16 @@ class Spitball
     File.open(gemfile_path, 'w') {|f| f.write gemfile }
 
     if system "cd #{bundle_path} && bundle install #{bundle_path} --disable-shared-gems #{without_clause}"
+
+      # rewrite bang lines to #!/usr/bin/env ruby
+      # in serious lameness, OS X sed (more posix compliant?) requires
+      # a slightly different sed incantation for in place editing
+      if RUBY_PLATFORM =~ /linux/
+        system "cd #{bundle_path} && find bin/* -exec sed -i'' '1,1 s|^#!/.*/ruby[ ]*|#!/usr/bin/env ruby|' {} \;"
+      else
+        system "cd #{bundle_path} && find bin/* -exec sed -i '' '1,1 s|^#!/.*/ruby[ ]*|#!/usr/bin/env ruby|' {} \;"
+      end
+
       system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
       system "mv #{tarball_path}.#{Process.pid} #{tarball_path}"
     else
