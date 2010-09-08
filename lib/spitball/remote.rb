@@ -3,8 +3,6 @@ require 'uri'
 
 class Spitball::Remote
 
-  WAIT_SECONDS = 240
-
   def initialize(gemfile, host, port)
     @gemfile = gemfile
     @host = host
@@ -46,14 +44,10 @@ class Spitball::Remote
   def get_tarball_data(location)
     uri = URI.parse(location)
 
-    (WAIT_SECONDS / 2).times do
-      if (res = Net::HTTP.get_response(uri)).code == '200'
-        return res.body
-      else
-        sleep 2
-      end
+    if (res = Net::HTTP.get_response(uri)).code == '200'
+      return res.body
+    else
+      raise Spitball::ServerFailure, "Spitball download failed."
     end
-
-    raise Spitball::ServerFailure, "Spitball download timed out."
   end
 end
