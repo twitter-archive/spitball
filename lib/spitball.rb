@@ -53,7 +53,7 @@ class Spitball
 
     File.open(gemfile_path, 'w') {|f| f.write gemfile }
 
-    if system "cd #{bundle_path} && bundle install #{bundle_path} --disable-shared-gems #{without_clause}"
+    if system "cd #{bundle_path} && bundle install #{bundle_path} --disable-shared-gems #{without_clause} 2>&1"
 
       # rewrite bang lines to #!/usr/bin/env ruby
       # in serious lameness, OS X sed (more posix compliant?) requires
