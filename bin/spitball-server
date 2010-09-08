@@ -58,7 +58,12 @@ post '/create' do
     pid = open("|-")
 
     if pid == nil # child
-      ball.cache!
+      begin
+        ball.cache!
+      rescue Object => e
+        puts "#{e.class}: #{e}", e.backtrace.map{|l| "\t#{l}" }
+        exit! 1
+      end
       exit!
     end
 
