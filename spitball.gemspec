@@ -55,7 +55,7 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<rspec>, [">= 0"])
       s.add_development_dependency(%q<rr>, [">= 0"])
     else
-      s.add_dependency(%q<bundler>, [">= 0.9.5"])
+      s.add_dependency(%q<bundler>, [">= 1.0.0"])
       s.add_dependency(%q<sinatra>, [">= 1.0"])
       s.add_dependency(%q<rspec>, [">= 0"])
       s.add_dependency(%q<rr>, [">= 0"])
