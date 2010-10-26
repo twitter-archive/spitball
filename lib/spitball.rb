@@ -57,7 +57,8 @@ class Spitball
     Bundler.with_clean_env do
       Dir.chdir(bundle_path) {
         Bundler.ui = BundlerUI.new
-        Bundler.settings[:path] = '.'
+        Bundler.settings[:disable_shared_gems] = '1'
+        Bundler.settings[:path] = bundle_path
         Bundler::Installer.install(Bundler.root, Bundler.definition)
       }
     end
