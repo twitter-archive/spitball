@@ -6,7 +6,7 @@ describe Spitball do
 
     @gemfile = <<-end_gemfile
         source :rubygems
-        gem "json_pure"
+        gem "activerecord"
       end_gemfile
 
     @lockfile = <<-end_lockfile.split("\n").map{|l| l[6..-1] }.join("\n")
