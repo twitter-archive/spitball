@@ -6,7 +6,6 @@ class Spitball
   require 'spitball/repo'
   require 'spitball/file_lock'
   require 'spitball/remote'
-  require 'spitball/bundler_ui'
 
   class ServerFailure < StandardError; end
   class ClientError < StandardError; end
@@ -16,11 +15,12 @@ class Spitball
 
   include Spitball::Digest
 
-  attr_reader :gemfile, :options
+  attr_reader :gemfile, :gemfile_lock, :options
 
-  def initialize(gemfile, options = {})
-    @gemfile = gemfile
-    @options = options
+  def initialize(gemfile, gemfile_lock, options = {})
+    @gemfile      = gemfile
+    @gemfile_lock = gemfile_lock
+    @options      = options
   end
 
   def copy_to(dest)
@@ -33,14 +33,12 @@ class Spitball
   end
 
   def cache!(sync = true)
-    Spitball::Repo.make_cache_dir
-
+    Spitball::Repo.make_cache_dirs
     unless cached?
       lock = Spitball::FileLock.new(bundle_path('lock'))
-
       if lock.acquire_lock
         begin
-          create_bundle
+         create_bundle
         ensure
           lock.release_lock
         end
@@ -52,15 +50,18 @@ class Spitball
 
   def create_bundle
     FileUtils.mkdir_p bundle_path
-    
-    File.open(gemfile_path, 'w') {|f| f.write gemfile }
-    Bundler.with_clean_env do
-      Dir.chdir(bundle_path) {
-        Bundler.ui = BundlerUI.new
-        Bundler.settings[:disable_shared_gems] = '1'
-        Bundler.settings[:path] = bundle_path
-        Bundler::Installer.install(Bundler.root, Bundler.definition)
-      }
+    parser = nil
+    Dir.chdir(bundle_path) {
+      File.open(gemfile_path, 'w') {|f| f.write gemfile }
+      File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
+      parser = Bundler::LockfileParser.new(gemfile_lock)
+    }
+
+    Dir.chdir(Repo.gemcache_path) do
+      parser.specs.each do |spec|
+        puts `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{bundle_path}`
+      end
+      `cp #{bundle_path}/cache/*.gem .`
     end
     system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
     system "mv #{tarball_path}.#{Process.pid} #{tarball_path}"
@@ -77,7 +78,11 @@ class Spitball
   # Paths
 
   def bundle_path(extension = nil)
-    Repo.path(digest, extension)
+    Repo.bundle_path(digest, extension)
+  end
+
+  def gemfile_lock_path
+    File.expand_path('Gemfile.lock', bundle_path)
   end
 
   def gemfile_path
@@ -85,6 +90,6 @@ class Spitball
   end
 
   def tarball_path
-    Repo.path(digest, 'tgz')
+    Repo.bundle_path(digest, 'tgz')
   end
 end

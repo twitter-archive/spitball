@@ -37,7 +37,6 @@ end
 
 opts.permute!(ARGV)
 
-
 args[:gemfile] = ARGV[0]
 args[:destination] = ARGV[1]
 
@@ -47,9 +46,10 @@ unless args[:gemfile] and args[:destination]
 end
 
 gemfile = File.read(args[:gemfile])
+gemfile_lock = File.read("#{args[:gemfile]}.lock")
 
 ball = args[:host] ?
-  Spitball::Remote.new(gemfile, args[:host], (args[:port] || 8080).to_i) :
-  Spitball.new(gemfile, :without => args[:without])
+  Spitball::Remote.new(gemfile, gemfile_lock, :host => args[:host], :port => (args[:port] || 8080).to_i) :
+  Spitball.new(gemfile, gemfile_lock, :without => args[:without])
 
 ball.copy_to args[:destination]
