@@ -1,0 +1,12 @@
+.DS_Store
+.*.swp
+tmp
+pkg
+*.gem
+*.rbc
+
+lib/bundler/man
+
+man/*
+!man/*.ronn
+!man/index.txt

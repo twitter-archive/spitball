@@ -6,7 +6,7 @@ describe Spitball do
 
     @gemfile = <<-end_gemfile
         source :rubygems
-        gem "activerecord"
+        gem "json_pure"
       end_gemfile
 
     @spitball = Spitball.new(@gemfile)
