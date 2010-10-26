@@ -24,7 +24,7 @@ begin
     gem.homepage = "http://github.com/freels/spitball"
     gem.authors = ["Matt Freels", "Brandon Mitchell"]
 
-    gem.add_dependency 'bundler', '>= 0.9.5'
+    gem.add_dependency 'bundler', '>= 1.0.0'
     gem.add_dependency 'sinatra', '>= 1.0'
 
     gem.add_development_dependency 'rspec'

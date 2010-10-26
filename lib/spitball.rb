@@ -1,10 +1,12 @@
 require 'fileutils'
+require 'bundler'
 
 class Spitball
   require 'spitball/digest'
   require 'spitball/repo'
   require 'spitball/file_lock'
   require 'spitball/remote'
+  require 'spitball/bundler_ui'
 
   class ServerFailure < StandardError; end
   class ClientError < StandardError; end
@@ -50,28 +52,17 @@ class Spitball
 
   def create_bundle
     FileUtils.mkdir_p bundle_path
-
+    
     File.open(gemfile_path, 'w') {|f| f.write gemfile }
-
-    if system "cd #{bundle_path} && bundle install #{bundle_path} --disable-shared-gems #{without_clause} 2>&1"
-
-      # rewrite bang lines to #!/usr/bin/env ruby
-      # in serious lameness, OS X sed (more posix compliant?) requires
-      # a slightly different sed incantation for in place editing
-      if Dir["#{bundle_path}/bin/*"].length > 0
-        if RUBY_PLATFORM =~ /linux/
-          system "cd #{bundle_path} && find bin/* -exec sed -i'' '1,1 s|^#!/.*/ruby[ ]*|#!/usr/bin/env ruby|' {} \\;"
-        else
-          system "cd #{bundle_path} && find bin/* -exec sed -i '' '1,1 s|^#!/.*/ruby[ ]*|#!/usr/bin/env ruby|' {} \\;"
-        end
-      end
-
-      system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
-      system "mv #{tarball_path}.#{Process.pid} #{tarball_path}"
-    else
-      raise BundleCreationFailure, "Bundle build failure."
+    Bundler.with_clean_env do
+      Dir.chdir(bundle_path) {
+        Bundler.ui = BundlerUI.new
+        Bundler.settings[:path] = '.'
+        Bundler::Installer.install(Bundler.root, Bundler.definition)
+      }
     end
-
+    system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
+    system "mv #{tarball_path}.#{Process.pid} #{tarball_path}"
     FileUtils.rm_rf bundle_path
   end
 
