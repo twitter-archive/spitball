@@ -34,7 +34,7 @@ get '/:digest.:format' do |digest, format|
   error 400 unless ['tgz', 'gemfile'].include? format
 
   # this returns 404 on Errno::ENOENT
-  send_file Spitball::Repo.path(digest, format), :type => format
+  send_file Spitball::Repo.bundle_path(digest, format), :type => format
 end
 
 class Streamer

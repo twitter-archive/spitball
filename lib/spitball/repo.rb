@@ -3,9 +3,13 @@ module Spitball::Repo
 
   WORKING_DIR = ENV['SPITBALL_CACHE'] || '/tmp/spitball'
 
-  def path(digest, extension = nil)
+  def bundle_path(digest, extension = nil)
     extension = ".#{extension}" unless extension.nil? or extension.empty?
     File.join WORKING_DIR, "bundle_#{digest}#{extension}"
+  end
+
+  def gemcache_path
+    File.join(WORKING_DIR, "gemcache")
   end
 
   def exist?(digest)
@@ -13,11 +17,7 @@ module Spitball::Repo
   end
 
   def tarball(digest)
-    path(digest, 'tgz')
-  end
-
-  def gemfile(digest)
-    path(digest, 'gemfile')
+    bundle_path(digest, 'tgz')
   end
 
   def cached_digests
@@ -26,7 +26,7 @@ module Spitball::Repo
     end.compact.uniq.sort
   end
 
-  def make_cache_dir
+  def make_cache_dirs
     FileUtils.mkdir_p File.join(WORKING_DIR, "gemcache")
   end
 

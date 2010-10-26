@@ -33,7 +33,7 @@ class Spitball
   end
 
   def cache!(sync = true)
-    Spitball::Repo.make_cache_dir
+    Spitball::Repo.make_cache_dirs
     unless cached?
       lock = Spitball::FileLock.new(bundle_path('lock'))
       if lock.acquire_lock
@@ -58,7 +58,7 @@ class Spitball
       parser = Bundler::LockfileParser.new(gemfile_lock)
     }
 
-    Dir.chdir('/tmp/spitball/gemcache') do
+    Dir.chdir(Repo.gemcache_path) do
       parser.specs.each do |spec|
         puts `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{bundle_path}`
       end
@@ -79,7 +79,7 @@ class Spitball
   # Paths
 
   def bundle_path(extension = nil)
-    Repo.path(digest, extension)
+    Repo.bundle_path(digest, extension)
   end
 
   def gemfile_lock_path
@@ -91,6 +91,6 @@ class Spitball
   end
 
   def tarball_path
-    Repo.path(digest, 'tgz')
+    Repo.bundle_path(digest, 'tgz')
   end
 end

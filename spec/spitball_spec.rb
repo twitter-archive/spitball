@@ -9,7 +9,34 @@ describe Spitball do
         gem "activerecord"
       end_gemfile
 
-    @spitball = Spitball.new(@gemfile)
+    @lockfile = <<-end_lockfile.split("\n").map{|l| l[6..-1] }.join("\n")
+      GEM
+        remote: http://rubygems.org/
+        specs:
+          activemodel (3.0.1)
+            activesupport (= 3.0.1)
+            builder (~> 2.1.2)
+            i18n (~> 0.4.1)
+          activerecord (3.0.1)
+            activemodel (= 3.0.1)
+            activesupport (= 3.0.1)
+            arel (~> 1.0.0)
+            tzinfo (~> 0.3.23)
+          activesupport (3.0.1)
+          arel (1.0.1)
+            activesupport (~> 3.0.0)
+          builder (2.1.2)
+          i18n (0.4.2)
+          tzinfo (0.3.23)
+
+      PLATFORMS
+        ruby
+
+      DEPENDENCIES
+        activerecord
+    end_lockfile
+
+    @spitball = Spitball.new(@gemfile, @lockfile)
   end
 
   describe "cached?" do
@@ -93,7 +120,7 @@ end
 describe Spitball::FileLock do
   describe "acquire_lock" do
     before do
-      Spitball::Repo.make_cache_dir
+      Spitball::Repo.make_cache_dirs
       @lock_path = File.expand_path('test.lock', SPITBALL_CACHE)
       @lock = Spitball::FileLock.new(@lock_path)
     end
@@ -113,50 +140,56 @@ end
 
 describe Spitball::Repo do
   before do
-    Spitball::Repo.make_cache_dir
+    Spitball::Repo.make_cache_dirs
   end
 
-  describe "make_cache_dir" do
+  describe "make_cache_dirs" do
     it "creates the correct cache dir" do
       FileUtils.rm_rf(SPITBALL_CACHE)
 
       File.exist?(SPITBALL_CACHE).should_not == true
-      Spitball::Repo.make_cache_dir
+      Spitball::Repo.make_cache_dirs
       File.exist?(SPITBALL_CACHE).should == true
     end
   end
 
-  describe "path" do
+  describe "bundle_path" do
     it "generates paths with the correct cache" do
-      Spitball::Repo.path('digest').should =~ %r[^#{SPITBALL_CACHE}]
+      Spitball::Repo.bundle_path('digest').should =~ %r[^#{SPITBALL_CACHE}]
     end
 
     it "generates paths with extensions" do
-      Spitball::Repo.path('digest', 'tgz').should =~ %r[\.tgz$]
+      Spitball::Repo.bundle_path('digest', 'tgz').should =~ %r[\.tgz$]
     end
 
     it "generates paths prefixed with bundle_" do
-      Spitball::Repo.path('digest', 'tgz').should =~ %r[bundle_digest\.tgz$]
+      Spitball::Repo.bundle_path('digest', 'tgz').should =~ %r[bundle_digest\.tgz$]
+    end
+  end
+
+  describe "gemcache_path" do
+    it "returns the correct path in the cache dir" do
+      Spitball::Repo.gemcache_path.should == File.join(SPITBALL_CACHE, "gemcache")
     end
   end
 
   describe "exist?" do
     it "returns true if tarball for a digest exists" do
       Spitball::Repo.exist?('digest').should_not == true
-      File.open(Spitball::Repo.path('digest', 'tgz'), 'w') {|f| f.write 'tarball!' }
+      File.open(Spitball::Repo.bundle_path('digest', 'tgz'), 'w') {|f| f.write 'tarball!' }
       Spitball::Repo.exist?('digest').should == true
     end
   end
 
   describe "tarball" do
     it "returns the path of the cached tarball for a digest" do
-      Spitball::Repo.tarball('digest').should == Spitball::Repo.path('digest', 'tgz')
+      Spitball::Repo.tarball('digest').should == Spitball::Repo.bundle_path('digest', 'tgz')
     end
   end
 
   describe "gemfile" do
     it "returns the path of the cached gemfile for a digest" do
-      Spitball::Repo.gemfile('digest').should == Spitball::Repo.path('digest', 'gemfile')
+      Spitball::Repo.gemfile('digest').should == Spitball::Repo.bundle_path('digest', 'gemfile')
     end
   end
 
