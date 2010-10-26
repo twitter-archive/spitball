@@ -3,10 +3,11 @@ require 'uri'
 
 class Spitball::Remote
 
-  def initialize(gemfile, host, port)
+  def initialize(gemfile, gemfile_lock, opts = {})
     @gemfile = gemfile
-    @host = host
-    @port = port
+    @gemfile_lock = gemfile_lock
+    @host = opts[:host]
+    @port = opts[:port]
   end
 
   def copy_to(path)
@@ -17,12 +18,7 @@ class Spitball::Remote
   private
 
   def generate_remote_tarball
-    url = URI.parse("http://#{@host}:#{@port}/create")
-    res = Net::HTTP.start(url.host, url.port) do |http|
-      http.post(url.path, @gemfile) do |body|
-        print body
-      end
-    end
+    res = Net::HTTP.post_form(URI.parse("http://#{@host}:#{@port}/create"), {'gemfile' => @gemfile, 'gemfile_lock' => @gemfile_lock})
 
     print "\nDownloading tarball..."; $stdout.flush
 

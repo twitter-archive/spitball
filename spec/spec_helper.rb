@@ -49,12 +49,6 @@ def use_success_bundler
   end
 end
 
-def use_fail_bundler
-  make_bundler do |f|
-    f.puts "exit 1"
-  end
-end
-
 def purge_bin
   FileUtils.rm_rf File.expand_path('bin', SPEC_DIR)
 end

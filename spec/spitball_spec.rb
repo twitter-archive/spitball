@@ -73,13 +73,6 @@ describe Spitball do
 
       File.exist?(@spitball.tarball_path).should == true
     end
-
-    it "raises an exception if bundle creation fails" do
-      use_fail_bundler
-
-      lambda { @spitball.create_bundle }.should raise_error(Spitball::BundleCreationFailure)
-      File.exist?(@spitball.tarball_path).should_not == true
-    end
   end
 
   describe "without_clause" do

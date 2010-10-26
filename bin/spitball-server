@@ -20,6 +20,7 @@ OptionParser.new { |op|
 set :run, true
 
 mime_type :gemfile, 'text/plain'
+mime_type :lock, 'text/plain'
 mime_type :tgz, 'application/x-compressed'
 
 # return json array of cached SHAs
@@ -45,7 +46,7 @@ end
 # 202 Accepted if it does not. The body of the response is the URI for
 # the tarball.
 post '/create' do
-  ball = Spitball.new(request.body.read)
+  ball = Spitball.new(params['gemfile'], params['gemfile_lock'])
   url = "#{request.url.split("/create").first}/#{ball.digest}.tgz"
   response['Location'] = url
 
@@ -59,6 +60,7 @@ post '/create' do
 
     if pid == nil # child
       begin
+        STDOUT.sync = true
         ball.cache!
       rescue Object => e
         puts "#{e.class}: #{e}", e.backtrace.map{|l| "\t#{l}" }

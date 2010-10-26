@@ -27,7 +27,7 @@ module Spitball::Repo
   end
 
   def make_cache_dir
-    FileUtils.mkdir_p WORKING_DIR
+    FileUtils.mkdir_p File.join(WORKING_DIR, "gemcache")
   end
 
   def clean_up_unused(access_window)
