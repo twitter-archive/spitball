@@ -6,34 +6,20 @@ describe Spitball do
 
     @gemfile = <<-end_gemfile
         source :rubygems
-        gem "activerecord"
+        gem "json_pure"
       end_gemfile
 
     @lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{6}/m, "\n")
       GEM
         remote: http://rubygems.org/
         specs:
-          activemodel (3.0.1)
-            activesupport (= 3.0.1)
-            builder (~> 2.1.2)
-            i18n (~> 0.4.1)
-          activerecord (3.0.1)
-            activemodel (= 3.0.1)
-            activesupport (= 3.0.1)
-            arel (~> 1.0.0)
-            tzinfo (~> 0.3.23)
-          activesupport (3.0.1)
-          arel (1.0.1)
-            activesupport (~> 3.0.0)
-          builder (2.1.2)
-          i18n (0.4.2)
-          tzinfo (0.3.23)
+          json_pure (1.4.6)
 
       PLATFORMS
         ruby
 
       DEPENDENCIES
-        activerecord
+        json_pure
     end_lockfile
 
     @spitball = Spitball.new(@gemfile, @lockfile)
@@ -43,7 +29,7 @@ describe Spitball do
     it "returns true if the tarball has already been cached" do
       @spitball.should_not be_cached
       mock(@spitball).install_gem(anything).times(any_times)
-      @spitball.cache!
+      capture_stdout { @spitball.cache! }
       @spitball.should be_cached
     end
   end
@@ -97,7 +83,7 @@ describe Spitball do
   describe "create_bundle" do
     it "generates a bundle at the bundle_path" do
       mock(@spitball).install_gem(anything).times(any_times)
-      @spitball.create_bundle
+      capture_stdout { @spitball.create_bundle }
       File.exist?(@spitball.tarball_path).should == true
     end
   end

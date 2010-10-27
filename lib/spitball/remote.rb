@@ -18,7 +18,13 @@ class Spitball::Remote
   private
 
   def generate_remote_tarball
-    res = Net::HTTP.post_form(URI.parse("http://#{@host}:#{@port}/create"), {'gemfile' => @gemfile, 'gemfile_lock' => @gemfile_lock})
+    url = URI.parse("http://#{@host}:#{@port}/create")
+    req = Net::HTTP::Post.new(url.path)
+    req.form_data = {'gemfile' => @gemfile, 'gemfile_lock' => @gemfile_lock}
+
+    res = Net::HTTP.new(url.host, url.port).start do |http|
+      http.request(req) {|r| puts r.read_body }
+    end
 
     print "\nDownloading tarball..."; $stdout.flush
 
