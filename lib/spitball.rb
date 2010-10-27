@@ -59,6 +59,7 @@ class Spitball
       File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
       Bundler.settings.without = without.split(/\s*,\s*/).map{|w| w.to_sym}
       definition = Bundler.definition(true)
+      definition.resolve_remotely!
     }
 
     Dir.chdir(Repo.gemcache_path) do
@@ -97,7 +98,8 @@ class Spitball
 
   def sources_opt(sources)
     sources.
-      map{|s| s.remotes.to_s}.flatten.
+      map{|s| s.remotes}.flatten.
+      map{|s| s.to_s}.
       sort.
       map{|s| %w{gemcutter rubygems rubyforge}.include?(s) ? "http://rubygems.org" : s}.
       map{|s| "--source #{s}"}.
