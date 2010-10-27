@@ -65,7 +65,6 @@ class Spitball
       definition.requested_specs.each do |spec|
         install_gem(spec, definition.sources)
       end
-      #`cp -nR #{bundle_path}/cache/*.gem .` unless Dir["#{bundle_path}/cache/*.gem"].to_a.empty?
     end
 
     Dir.chdir(bundle_path) do
