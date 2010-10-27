@@ -3,8 +3,8 @@
 PREFIX=`cd \`dirname $0\`; pwd`
 
 export GEM_PATH=$PREFIX/vendor
-export PATH=$PREFIX/bin:$PREFIX/vendor/bin:$PREFIX/../shared/ruby/bin:$PATH
-export SPITBALL_LOG_FILE=$PREFIX/../shared/spitball.log
+export PATH=$PREFIX/bin:$PREFIX/vendor/bin:$PREFIX/../../shared/ruby/bin:$PATH
+export SPITBALL_LOG_FILE=$PREFIX/../../shared/spitball.log
 export SPITBALL_CACHE=$PREFIX/cache
 
 if [ "$SPITBALL_PIDFILE" = "" ]; then
