@@ -49,8 +49,8 @@ class Spitball
   end
 
   def create_bundle
+    Spitball::Repo.make_cache_dirs
     FileUtils.mkdir_p bundle_path
-
     parser = nil
     Dir.chdir(bundle_path) {
       File.open(gemfile_path, 'w') {|f| f.write gemfile }

@@ -9,7 +9,7 @@ describe Spitball do
         gem "activerecord"
       end_gemfile
 
-    @lockfile = <<-end_lockfile.split("\n").map{|l| l[6..-1] }.join("\n")
+    @lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{6}/m, "\n")
       GEM
         remote: http://rubygems.org/
         specs:
@@ -104,11 +104,11 @@ describe Spitball do
 
   describe "without_clause" do
     it "returns a --without bundler option if :without is set" do
-      Spitball.new('gemfile', :without => "system").without_clause.should == '--without=system'
+      Spitball.new('gemfile', 'gemlock', :without => "system").without_clause.should == '--without=system'
     end
 
     it "returns an empty string if without is not set" do
-      Spitball.new('gemfile').without_clause.should == ''
+      Spitball.new('gemfile', 'gemlock').without_clause.should == ''
     end
 
     it "allows multiple groups" do
@@ -223,15 +223,16 @@ end
 
 describe Spitball::Digest do
   it "generates a digest based on the spitball's options and gemfile" do
-    [Spitball.new('gemfile contents', :without => "system").digest,
-     Spitball.new('gemfile contents 2', :without => "system").digest,
-     Spitball.new('gemfile', :without => "other_group").digest,
-     Spitball.new('gemfile').digest
+    [Spitball.new('gemfile contents', 'gemlock', :without => "system").digest,
+     Spitball.new('gemfile contents 2', 'gemlock', :without => "system").digest,
+     Spitball.new('gemfile', 'gemlock', :without => "other_group").digest,
+     Spitball.new('gemfile', 'gemlock').digest,
+     Spitball.new('gemfile', 'gemlock2').digest
     ].uniq.length.should == 4
   end
 
   it "provides a hash equal to the digest's hash"do
-    spitball = Spitball.new('gemfile contents')
+    spitball = Spitball.new('gemfile contents', 'gemlock contents')
     spitball.hash.should == spitball.digest.hash
   end
 end
