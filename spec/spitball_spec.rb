@@ -42,6 +42,7 @@ describe Spitball do
   describe "cached?" do
     it "returns true if the tarball has already been cached" do
       @spitball.should_not be_cached
+      mock(@spitball).install_gem(anything).times(any_times)
       @spitball.cache!
       @spitball.should be_cached
     end
@@ -61,7 +62,6 @@ describe Spitball do
       mock.instance_of(Spitball::FileLock).acquire_lock { true }
       mock(@spitball).create_bundle
       mock.instance_of(Spitball::FileLock).release_lock
-
       @spitball.cache!
     end
 
@@ -96,23 +96,56 @@ describe Spitball do
 
   describe "create_bundle" do
     it "generates a bundle at the bundle_path" do
+      mock(@spitball).install_gem(anything).times(any_times)
       @spitball.create_bundle
-
       File.exist?(@spitball.tarball_path).should == true
     end
   end
 
   describe "without_clause" do
-    it "returns a --without bundler option if :without is set" do
-      Spitball.new('gemfile', 'gemlock', :without => "system").without_clause.should == '--without=system'
-    end
+    before do
+      @gemfile = <<-end_gemfile
+          source :rubygems
+          group 'development' do
+            gem "activerecord"
+          end
+        end_gemfile
 
-    it "returns an empty string if without is not set" do
-      Spitball.new('gemfile', 'gemlock').without_clause.should == ''
-    end
+      @lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{6}/m, "\n")
+        GEM
+          remote: http://rubygems.org/
+          specs:
+            activemodel (3.0.1)
+              activesupport (= 3.0.1)
+              builder (~> 2.1.2)
+              i18n (~> 0.4.1)
+            activerecord (3.0.1)
+              activemodel (= 3.0.1)
+              activesupport (= 3.0.1)
+              arel (~> 1.0.0)
+              tzinfo (~> 0.3.23)
+            activesupport (3.0.1)
+            arel (1.0.1)
+              activesupport (~> 3.0.0)
+            builder (2.1.2)
+            i18n (0.4.2)
+            tzinfo (0.3.23)
 
-    it "allows multiple groups" do
-      Spitball.new('gemfile', :without => ["system", "test"]).without_clause.should == '--without=system,test'
+        PLATFORMS
+          ruby
+
+        DEPENDENCIES
+          activerecord
+      end_lockfile
+    end
+    
+    it "should use without" do
+      @spitball = Spitball.new(@gemfile, @lockfile)
+      mock(@spitball).install_gem(anything).times(3)
+      @spitball.create_bundle
+      @spitball = Spitball.new(@gemfile, @lockfile, :without => 'development')
+      mock(@spitball).install_gem(anything).times(1)
+      @spitball.create_bundle
     end
   end
 end
