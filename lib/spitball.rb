@@ -89,6 +89,8 @@ class Spitball
       FileUtils.mkdir_p(cache_dir)
       out = `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(sources)} 2>&1`
       $? == 0 ? (puts out) : (raise BundleCreationFailure, out)
+    else
+      puts "Using cached version of #{spec.name} (#{spec.version})"
     end
     `cp -R #{cache_dir}/* #{bundle_path}`
   end
