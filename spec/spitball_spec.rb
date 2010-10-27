@@ -28,7 +28,7 @@ describe Spitball do
   describe "cached?" do
     it "returns true if the tarball has already been cached" do
       @spitball.should_not be_cached
-      @spitball.cache!
+      capture_stdout { @spitball.cache! }
       @spitball.should be_cached
     end
   end
@@ -82,7 +82,7 @@ describe Spitball do
 
   describe "create_bundle" do
     it "generates a bundle at the bundle_path" do
-      @spitball.create_bundle
+      capture_stdout { @spitball.create_bundle }
 
       File.exist?(@spitball.tarball_path).should == true
     end

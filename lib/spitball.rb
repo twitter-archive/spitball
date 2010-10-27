@@ -51,19 +51,31 @@ class Spitball
   def create_bundle
     Spitball::Repo.make_cache_dirs
     FileUtils.mkdir_p bundle_path
-    parser = nil
-    Dir.chdir(bundle_path) {
-      File.open(gemfile_path, 'w') {|f| f.write gemfile }
-      File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
-      parser = Bundler::LockfileParser.new(gemfile_lock)
-    }
 
     Dir.chdir(Repo.gemcache_path) do
-      parser.specs.each do |spec|
+      specs = Bundler::LockfileParser.new(gemfile_lock).specs
+      specs.each do |spec|
         puts `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{bundle_path}`
       end
       `cp #{bundle_path}/cache/*.gem .`
     end
+
+    Dir.chdir(bundle_path) do
+      File.open(gemfile_path, 'w') {|f| f.write gemfile }
+      File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
+
+      # rewrite bang lines to #!/usr/bin/env ruby
+      # in serious lameness, OS X sed (more posix compliant?) requires
+      # a slightly different sed incantation for in place editing
+      if Dir["#{bundle_path}/bin/*"].length > 0
+        if RUBY_PLATFORM =~ /linux/
+          `find bin/* -exec sed -i'' '1,1 s|^#!/.*/ruby[ ]*|#!/usr/bin/env ruby|' {} \\;`
+        else
+          `find bin/* -exec sed -i '' '1,1 s|^#!/.*/ruby[ ]*|#!/usr/bin/env ruby|' {} \\;`
+        end
+      end
+    end
+
     system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
     system "mv #{tarball_path}.#{Process.pid} #{tarball_path}"
     FileUtils.rm_rf bundle_path
