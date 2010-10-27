@@ -62,7 +62,7 @@ class Spitball
 
     Dir.chdir(Repo.gemcache_path) do
       definition.requested_specs.each do |spec|
-        install_gem(spec)
+        install_gem(spec, definition.sources)
       end
       `cp -nR #{bundle_path}/cache/*.gem .` unless Dir["#{bundle_path}/cache/*.gem"].to_a.empty?
     end
@@ -70,16 +70,10 @@ class Spitball
     Dir.chdir(bundle_path) do
       File.open(gemfile_path, 'w') {|f| f.write gemfile }
       File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
-
-      # rewrite bang lines to #!/usr/bin/env ruby
-      # in serious lameness, OS X sed (more posix compliant?) requires
-      # a slightly different sed incantation for in place editing
-      if Dir["#{bundle_path}/bin/*"].length > 0
-        if RUBY_PLATFORM =~ /linux/
-          `find bin/* -exec sed -i'' '1,1 s|^#!/.*/ruby[ ]*|#!/usr/bin/env ruby|' {} \\;`
-        else
-          `find bin/* -exec sed -i '' '1,1 s|^#!/.*/ruby[ ]*|#!/usr/bin/env ruby|' {} \\;`
-        end
+      Dir["#{bundle_path}/bin/**"].each do |file|
+        contents = File.read(file)
+        contents.gsub!(/^#!.*?\n/, "#!/usr/bin/env ruby\n")
+        File.open(file, 'w') {|f| f << contents}
       end
     end
 
@@ -88,8 +82,17 @@ class Spitball
     FileUtils.rm_rf bundle_path
   end
 
-  def install_gem(spec)
-    puts `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{bundle_path}`
+  def install_gem(spec, sources)
+    puts `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{bundle_path} #{sources_opt(sources)}2>&1`
+    raise unless $? == 0
+  end
+
+  def sources_opt(sources)
+    sources.
+      map{|s| s.remotes}.flatten.
+      map{|s| %w{gemcutter rubygems rubyforge}.include?(s.to_s) ? "http://rubygems.org" : s}.
+      map{|s| "--source #{s}"}.
+      join(' ')
   end
 
   # Paths
