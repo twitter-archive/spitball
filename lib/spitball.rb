@@ -83,8 +83,12 @@ class Spitball
   end
 
   def install_gem(spec, sources)
-    puts `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{bundle_path} #{sources_opt(sources)}2>&1`
-    raise unless $? == 0
+    out = `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{bundle_path} #{sources_opt(sources)}2>&1`
+    if $? == 0
+      puts out
+    else
+      raise BundleCreationFailure, out
+    end
   end
 
   def sources_opt(sources)
