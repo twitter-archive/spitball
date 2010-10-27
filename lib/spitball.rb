@@ -1,6 +1,8 @@
 require 'fileutils'
 require 'digest/md5'
 require 'bundler'
+require 'ext/bundler_lockfile_parser'
+require 'ext/bundler_fake_dsl'
 
 class Spitball
   require 'spitball/digest'
@@ -22,7 +24,7 @@ class Spitball
     @gemfile      = gemfile
     @gemfile_lock = gemfile_lock
     @options      = options
-    @without      = options[:without] || ''
+    @without      = (options[:without] || []).map{|w| w.to_sym}
   end
 
   def copy_to(dest)
@@ -53,24 +55,15 @@ class Spitball
   def create_bundle
     Spitball::Repo.make_cache_dirs
     FileUtils.mkdir_p bundle_path
-    definition = nil
-    Dir.chdir(bundle_path) {
-      File.open(gemfile_path, 'w') {|f| f.write gemfile }
-      File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
-      Bundler.settings.without = without.split(/\s*,\s*/).map{|w| w.to_sym}
-      definition = Bundler.definition(true)
-      definition.resolve_remotely!
-    }
+    parsed_lockfile, dsl = Bundler::FakeLockfileParser.new(gemfile_lock), Bundler::FakeDsl.new(gemfile)
 
     Dir.chdir(Repo.gemcache_path) do
-      definition.requested_specs.each do |spec|
-        install_gem(spec, definition.sources)
+      parsed_lockfile.specs.each do |spec|
+        install_gem(spec, parsed_lockfile.sources) unless without.any?{|w| dsl.__groups[w].include?(spec.name)}
       end
     end
 
     Dir.chdir(bundle_path) do
-      File.open(gemfile_path, 'w') {|f| f.write gemfile }
-      File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
       Dir["#{bundle_path}/bin/**"].each do |file|
         contents = File.read(file)
         contents.gsub!(/^#!.*?\n/, "#!/usr/bin/env ruby\n")
