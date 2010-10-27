@@ -30,6 +30,14 @@ end
 
 # helper methods
 
+def capture_stdout
+  $stdout = StringIO.new
+  yield
+  $stdout.string
+ensure
+  $stdout = STDOUT
+end
+
 def purge_test_cache
   FileUtils.rm_rf SPITBALL_CACHE
 end

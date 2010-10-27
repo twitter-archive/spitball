@@ -6,34 +6,20 @@ describe Spitball do
 
     @gemfile = <<-end_gemfile
         source :rubygems
-        gem "activerecord"
+        gem "json_pure"
       end_gemfile
 
-    @lockfile = <<-end_lockfile.split("\n").map{|l| l[6..-1] }.join("\n")
+    @lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{6}/m, "\n")
       GEM
         remote: http://rubygems.org/
         specs:
-          activemodel (3.0.1)
-            activesupport (= 3.0.1)
-            builder (~> 2.1.2)
-            i18n (~> 0.4.1)
-          activerecord (3.0.1)
-            activemodel (= 3.0.1)
-            activesupport (= 3.0.1)
-            arel (~> 1.0.0)
-            tzinfo (~> 0.3.23)
-          activesupport (3.0.1)
-          arel (1.0.1)
-            activesupport (~> 3.0.0)
-          builder (2.1.2)
-          i18n (0.4.2)
-          tzinfo (0.3.23)
+          json_pure (1.4.6)
 
       PLATFORMS
         ruby
 
       DEPENDENCIES
-        activerecord
+        json_pure
     end_lockfile
 
     @spitball = Spitball.new(@gemfile, @lockfile)
@@ -42,7 +28,8 @@ describe Spitball do
   describe "cached?" do
     it "returns true if the tarball has already been cached" do
       @spitball.should_not be_cached
-      @spitball.cache!
+      mock(@spitball).install_gem(anything).times(any_times)
+      capture_stdout { @spitball.cache! }
       @spitball.should be_cached
     end
   end
@@ -61,7 +48,6 @@ describe Spitball do
       mock.instance_of(Spitball::FileLock).acquire_lock { true }
       mock(@spitball).create_bundle
       mock.instance_of(Spitball::FileLock).release_lock
-
       @spitball.cache!
     end
 
@@ -96,23 +82,56 @@ describe Spitball do
 
   describe "create_bundle" do
     it "generates a bundle at the bundle_path" do
-      @spitball.create_bundle
-
+      mock(@spitball).install_gem(anything).times(any_times)
+      capture_stdout { @spitball.create_bundle }
       File.exist?(@spitball.tarball_path).should == true
     end
   end
 
   describe "without_clause" do
-    it "returns a --without bundler option if :without is set" do
-      Spitball.new('gemfile', :without => "system").without_clause.should == '--without=system'
-    end
+    before do
+      @gemfile = <<-end_gemfile
+          source :rubygems
+          group 'development' do
+            gem "activerecord"
+          end
+        end_gemfile
 
-    it "returns an empty string if without is not set" do
-      Spitball.new('gemfile').without_clause.should == ''
-    end
+      @lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{6}/m, "\n")
+        GEM
+          remote: http://rubygems.org/
+          specs:
+            activemodel (3.0.1)
+              activesupport (= 3.0.1)
+              builder (~> 2.1.2)
+              i18n (~> 0.4.1)
+            activerecord (3.0.1)
+              activemodel (= 3.0.1)
+              activesupport (= 3.0.1)
+              arel (~> 1.0.0)
+              tzinfo (~> 0.3.23)
+            activesupport (3.0.1)
+            arel (1.0.1)
+              activesupport (~> 3.0.0)
+            builder (2.1.2)
+            i18n (0.4.2)
+            tzinfo (0.3.23)
 
-    it "allows multiple groups" do
-      Spitball.new('gemfile', :without => ["system", "test"]).without_clause.should == '--without=system,test'
+        PLATFORMS
+          ruby
+
+        DEPENDENCIES
+          activerecord
+      end_lockfile
+    end
+    
+    it "should use without" do
+      @spitball = Spitball.new(@gemfile, @lockfile)
+      mock(@spitball).install_gem(anything).times(3)
+      @spitball.create_bundle
+      @spitball = Spitball.new(@gemfile, @lockfile, :without => 'development')
+      mock(@spitball).install_gem(anything).times(1)
+      @spitball.create_bundle
     end
   end
 end
@@ -223,15 +242,16 @@ end
 
 describe Spitball::Digest do
   it "generates a digest based on the spitball's options and gemfile" do
-    [Spitball.new('gemfile contents', :without => "system").digest,
-     Spitball.new('gemfile contents 2', :without => "system").digest,
-     Spitball.new('gemfile', :without => "other_group").digest,
-     Spitball.new('gemfile').digest
+    [Spitball.new('gemfile contents', 'gemlock', :without => "system").digest,
+     Spitball.new('gemfile contents 2', 'gemlock', :without => "system").digest,
+     Spitball.new('gemfile', 'gemlock', :without => "other_group").digest,
+     Spitball.new('gemfile', 'gemlock').digest,
+     Spitball.new('gemfile', 'gemlock2').digest
     ].uniq.length.should == 4
   end
 
   it "provides a hash equal to the digest's hash"do
-    spitball = Spitball.new('gemfile contents')
+    spitball = Spitball.new('gemfile contents', 'gemlock contents')
     spitball.hash.should == spitball.digest.hash
   end
 end

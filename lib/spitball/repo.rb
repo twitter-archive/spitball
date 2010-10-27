@@ -12,6 +12,10 @@ module Spitball::Repo
     File.join(WORKING_DIR, "gemcache")
   end
 
+  def gemfile(digest)
+    bundle_path digest, 'gemfile'
+  end
+
   def exist?(digest)
     File.exist? tarball(digest)
   end

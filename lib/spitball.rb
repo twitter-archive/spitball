@@ -15,12 +15,13 @@ class Spitball
 
   include Spitball::Digest
 
-  attr_reader :gemfile, :gemfile_lock, :options
+  attr_reader :gemfile, :gemfile_lock, :without, :options
 
   def initialize(gemfile, gemfile_lock, options = {})
     @gemfile      = gemfile
     @gemfile_lock = gemfile_lock
     @options      = options
+    @without      = options[:without] || ''
   end
 
   def copy_to(dest)
@@ -49,30 +50,46 @@ class Spitball
   end
 
   def create_bundle
+    Spitball::Repo.make_cache_dirs
     FileUtils.mkdir_p bundle_path
-    parser = nil
+    definition = nil
     Dir.chdir(bundle_path) {
       File.open(gemfile_path, 'w') {|f| f.write gemfile }
       File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
-      parser = Bundler::LockfileParser.new(gemfile_lock)
+      Bundler.settings.without = without.split(/\s*,\s*/).map{|w| w.to_sym}
+      definition = Bundler.definition(true)
     }
 
     Dir.chdir(Repo.gemcache_path) do
-      parser.specs.each do |spec|
-        puts `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{bundle_path}`
+      definition.requested_specs.each do |spec|
+        install_gem(spec)
       end
-      `cp #{bundle_path}/cache/*.gem .`
+      `cp -nR #{bundle_path}/cache/*.gem .` unless Dir["#{bundle_path}/cache/*.gem"].to_a.empty?
     end
+
+    Dir.chdir(bundle_path) do
+      File.open(gemfile_path, 'w') {|f| f.write gemfile }
+      File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
+
+      # rewrite bang lines to #!/usr/bin/env ruby
+      # in serious lameness, OS X sed (more posix compliant?) requires
+      # a slightly different sed incantation for in place editing
+      if Dir["#{bundle_path}/bin/*"].length > 0
+        if RUBY_PLATFORM =~ /linux/
+          `find bin/* -exec sed -i'' '1,1 s|^#!/.*/ruby[ ]*|#!/usr/bin/env ruby|' {} \\;`
+        else
+          `find bin/* -exec sed -i '' '1,1 s|^#!/.*/ruby[ ]*|#!/usr/bin/env ruby|' {} \\;`
+        end
+      end
+    end
+
     system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
     system "mv #{tarball_path}.#{Process.pid} #{tarball_path}"
     FileUtils.rm_rf bundle_path
   end
 
-  def without_clause
-    without = Array(options[:without] || [])
-    return '' if without.empty?
-
-    "--without=#{without.join(',')}"
+  def install_gem(spec)
+    puts `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{bundle_path}`
   end
 
   # Paths
