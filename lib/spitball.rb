@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'digest/md5'
 require 'bundler'
 
 class Spitball
@@ -64,7 +65,7 @@ class Spitball
       definition.requested_specs.each do |spec|
         install_gem(spec, definition.sources)
       end
-      `cp -nR #{bundle_path}/cache/*.gem .` unless Dir["#{bundle_path}/cache/*.gem"].to_a.empty?
+      #`cp -nR #{bundle_path}/cache/*.gem .` unless Dir["#{bundle_path}/cache/*.gem"].to_a.empty?
     end
 
     Dir.chdir(bundle_path) do
@@ -77,20 +78,27 @@ class Spitball
       end
     end
 
+    system "rm -rf #{bundle_path}/cache"
     system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
     system "mv #{tarball_path}.#{Process.pid} #{tarball_path}"
     FileUtils.rm_rf bundle_path
   end
 
   def install_gem(spec, sources)
-    puts `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{bundle_path} #{sources_opt(sources)}2>&1`
-    raise unless $? == 0
+    cache_dir = File.join(Repo.gemcache_path, "#{spec.name}-#{::Digest::MD5.hexdigest([spec.name, spec.version, sources_opt(sources)].join('/'))}")
+    unless File.exist?(cache_dir)
+      FileUtils.mkdir_p(cache_dir)
+      out = `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(sources)} 2>&1`
+      $? == 0 ? (puts out) : (raise BundleCreationFailure, out)
+    end
+    `cp -R #{cache_dir}/* #{bundle_path}`
   end
 
   def sources_opt(sources)
     sources.
-      map{|s| s.remotes}.flatten.
-      map{|s| %w{gemcutter rubygems rubyforge}.include?(s.to_s) ? "http://rubygems.org" : s}.
+      map{|s| s.remotes.to_s}.flatten.
+      sort.
+      map{|s| %w{gemcutter rubygems rubyforge}.include?(s) ? "http://rubygems.org" : s}.
       map{|s| "--source #{s}"}.
       join(' ')
   end
