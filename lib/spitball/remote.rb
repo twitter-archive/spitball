@@ -11,8 +11,19 @@ class Spitball::Remote
   end
 
   def copy_to(path)
-    data = generate_remote_tarball
-    File.open(path, 'w') { |f| f.write data }
+    case path
+    when /\.tar\.gz$/, /\.tgz$/
+      data = generate_remote_tarball
+      File.open(path, 'w') { |f| f.write data }
+    else
+      begin
+        File.open('tmp.tgz', 'w') { |f| f.write data }
+        FileUtils.mkdir_p path
+        `tar xvf tmp.tgz -C #{path}`
+      ensure
+        FileUtils.rm_rf('tmp.tgz')
+      end
+    end
   end
 
   private

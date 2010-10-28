@@ -1,6 +1,5 @@
 require 'fileutils'
 require 'digest/md5'
-require 'bundler'
 require 'ext/bundler_lockfile_parser'
 require 'ext/bundler_fake_dsl'
 

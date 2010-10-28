@@ -25,10 +25,12 @@ module Bundler
   private
 
     TYPES = {
-      "GIT"  => Bundler::Source::Git,
-      "GEM"  => Bundler::Source::Rubygems,
-      "PATH" => Bundler::Source::Path
+      "GIT"  => 'git',
+      "GEM"  => 'gem',
+      "PATH" => 'path'
     }
+
+    GemSource = Struct.new(:remotes)
 
     def parse_source(line)
       case line
@@ -36,7 +38,13 @@ module Bundler
         @current_source = nil
         @opts, @type = {}, line
       when "  specs:"
-        @current_source = TYPES[@type].from_lock(@opts)
+        case @type
+        when 'GEM'
+          @current_source = GemSource.new([])
+          @current_source.remotes << @opts['remote']
+        else
+          raise
+        end
         @sources << @current_source
       when /^  ([a-z]+): (.*)$/i
         value = $2
@@ -63,20 +71,11 @@ module Bundler
         name, version, pinned = $1, $2, $4
         version = version.split(",").map { |d| d.strip } if version
 
-        dep = Bundler::Dependency.new(name, version)
+        dep = Gem::Dependency.new(name, version)
 
         if pinned && dep.name != 'bundler'
           spec = @specs.find { |s| s.name == dep.name }
           dep.source = spec.source if spec
-
-          # Path sources need to know what the default name / version
-          # to use in the case that there are no gemspecs present. A fake
-          # gemspec is created based on the version set on the dependency
-          # TODO: Use the version from the spec instead of from the dependency
-          if version && version.size == 1 && version.first =~ /^\s*= (.+)\s*$/ && dep.source.is_a?(Bundler::Source::Path)
-            dep.source.name    = name
-            dep.source.version = $1
-          end
         end
 
         @dependencies << dep
@@ -87,8 +86,10 @@ module Bundler
       if line =~ %r{^ {4}#{NAME_VERSION}$}
         name, version = $1, Gem::Version.new($2)
         platform = $3 ? Gem::Platform.new($3) : Gem::Platform::RUBY
-        @current_spec = LazySpecification.new(name, version, platform)
-        @current_spec.source = @current_source
+        @current_spec = Gem::Specification.new
+        @current_spec.name = name
+        @current_spec.version = version
+        #@current_spec.source = @current_source
         @specs << @current_spec
       elsif line =~ %r{^ {6}#{NAME_VERSION}$}
         name, version = $1, $2
