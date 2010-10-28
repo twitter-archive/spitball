@@ -29,7 +29,7 @@ describe Spitball do
     it "returns true if the tarball has already been cached" do
       @spitball.should_not be_cached
       mock(@spitball).install_gem(anything, anything).times(any_times)
-      capture_stdout { @spitball.cache! }
+      @spitball.cache!
       @spitball.should be_cached
     end
   end
@@ -97,7 +97,7 @@ describe Spitball do
           end
         end_gemfile
 
-      @lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{6}/m, "\n")
+      @lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{8}/m, "\n")
         GEM
           remote: http://rubygems.org/
           specs:
@@ -127,10 +127,10 @@ describe Spitball do
     
     it "should use without" do
       @spitball = Spitball.new(@gemfile, @lockfile)
-      mock(@spitball).install_gem(anything, anything).times(3)
+      mock(@spitball).install_gem(anything, anything).times(7)
       @spitball.create_bundle
       @spitball = Spitball.new(@gemfile, @lockfile, :without => 'development')
-      mock(@spitball).install_gem(anything, anything).times(1)
+      mock(@spitball).install_gem(anything, anything).times(6)
       @spitball.create_bundle
     end
   end
