@@ -70,6 +70,7 @@ post '/create' do
         end
       else
         while buf = baller.read(200)
+          $stdout.print buf
           o.print buf
         end
       end
