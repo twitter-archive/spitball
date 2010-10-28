@@ -3,6 +3,8 @@ require 'uri'
 
 class Spitball::Remote
 
+  include Spitball::ClientCommon
+
   def initialize(gemfile, gemfile_lock, opts = {})
     @gemfile = gemfile
     @gemfile_lock = gemfile_lock
@@ -10,25 +12,13 @@ class Spitball::Remote
     @port = opts[:port]
   end
 
-  def copy_to(path)
-    case path
-    when /\.tar\.gz$/, /\.tgz$/
-      data = generate_remote_tarball
-      File.open(path, 'w') { |f| f.write data }
-    else
-      begin
-        File.open('tmp.tgz', 'w') { |f| f.write data }
-        FileUtils.mkdir_p path
-        `tar xvf tmp.tgz -C #{path}`
-      ensure
-        FileUtils.rm_rf('tmp.tgz')
-      end
-    end
+  def cached?
+    !!@tarball_url
   end
 
-  private
+  def cache!(sync = true) # ignore sync
+    return if cached?
 
-  def generate_remote_tarball
     url = URI.parse("http://#{@host}:#{@port}/create")
     req = Net::HTTP::Post.new(url.path)
     req.form_data = {'gemfile' => @gemfile, 'gemfile_lock' => @gemfile_lock}
@@ -37,21 +27,25 @@ class Spitball::Remote
       http.request(req) {|r| puts r.read_body }
     end
 
-    print "\nDownloading tarball..."; $stdout.flush
-
-    data =
-      case res.code
-      when '201', '202' # Created, Accepted
-        get_tarball_data res['Location']
-      else
-        raise Spitball::ServerFailure, "Expected 2xx response code. Got #{res.code}."
-      end
-
-    puts "done."
-
-    data
+    case res.code
+    when '201', '202' # Created, Accepted
+      @tarball_url = res['Location']
+    else
+      raise Spitball::ServerFailure, "Expected 2xx response code. Got #{res.code}."
+    end
   rescue URI::InvalidURIError => e
     raise Spitball::ClientError, e.message
+  end
+
+  private
+
+  def copy_tarball_data(path)
+    cache!
+    print "\nDownloading tarball..."; $stdout.flush
+    data = get_tarball_data @tarball_url
+    puts "done."
+
+    File.open(path, 'w') { |f| f.write data }
   end
 
   def get_tarball_data(location)
@@ -62,5 +56,7 @@ class Spitball::Remote
     else
       raise Spitball::ServerFailure, "Spitball download failed."
     end
+  rescue URI::InvalidURIError => e
+    raise Spitball::ClientError, e.message
   end
 end
