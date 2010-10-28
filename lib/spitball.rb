@@ -4,6 +4,7 @@ require 'ext/bundler_lockfile_parser'
 require 'ext/bundler_fake_dsl'
 
 class Spitball
+  require 'spitball/client_common'
   require 'spitball/digest'
   require 'spitball/repo'
   require 'spitball/file_lock'
@@ -16,6 +17,7 @@ class Spitball
   VERSION = '1.0'
 
   include Spitball::Digest
+  include Spitball::ClientCommon
 
   attr_reader :gemfile, :gemfile_lock, :without, :options
 
@@ -24,11 +26,6 @@ class Spitball
     @gemfile_lock = gemfile_lock
     @options      = options
     @without      = (options[:without] || []).map{|w| w.to_sym}
-  end
-
-  def copy_to(dest)
-    cache!
-    FileUtils.cp(tarball_path, dest)
   end
 
   def cached?
@@ -49,6 +46,13 @@ class Spitball
         sleep 0.1 until cached?
       end
     end
+  end
+
+  private
+
+  def copy_tarball_data(dest)
+    cache!
+    FileUtils.cp(tarball_path, dest)
   end
 
   def create_bundle
