@@ -53,8 +53,14 @@ class Spitball
   end
 
   def create_bundle
+    ENV['BUNDLE_GEMFILE'] = gemfile_path # make bundler happy! :) *cry*
     Spitball::Repo.make_cache_dirs
     FileUtils.mkdir_p bundle_path
+
+    # save gemfile and lock file for future reference.
+    File.open(gemfile_path, 'w') {|f| f.write gemfile }
+    File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
+
     parsed_lockfile, dsl = Bundler::FakeLockfileParser.new(gemfile_lock), Bundler::FakeDsl.new(gemfile)
 
     Dir.chdir(Repo.gemcache_path) do
