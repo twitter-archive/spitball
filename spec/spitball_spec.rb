@@ -83,8 +83,8 @@ describe Spitball do
   describe "create_bundle" do
     it "generates a bundle at the bundle_path" do
       mock(@spitball).install_gem(anything, anything).times(any_times)
-      capture_stdout { @spitball.create_bundle }
-      File.exist?(@spitball.tarball_path).should == true
+      capture_stdout { @spitball.send :create_bundle }
+      File.exist?(@spitball.send(:tarball_path)).should == true
     end
   end
 
@@ -128,10 +128,10 @@ describe Spitball do
     it "should use without" do
       @spitball = Spitball.new(@gemfile, @lockfile)
       mock(@spitball).install_gem(anything, anything).times(7)
-      @spitball.create_bundle
+      @spitball.send :create_bundle
       @spitball = Spitball.new(@gemfile, @lockfile, :without => 'development')
       mock(@spitball).install_gem(anything, anything).times(6)
-      @spitball.create_bundle
+      @spitball.send :create_bundle
     end
   end
 end
