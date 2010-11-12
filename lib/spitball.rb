@@ -8,12 +8,15 @@ class Spitball
   require 'spitball/repo'
   require 'spitball/file_lock'
   require 'spitball/remote'
+  require 'spitball/version'
 
   class ServerFailure < StandardError; end
   class ClientError < StandardError; end
   class BundleCreationFailure < StandardError; end
 
-  VERSION = '1.0'
+  PROTOCOL_VERSION = '1'
+  PROTOCOL_HEADER = "X-Spitball-Protocol"
+  WITHOUT_HEADER = "X-Spitball-Without"
 
   include Spitball::Digest
 

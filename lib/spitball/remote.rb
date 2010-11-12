@@ -8,12 +8,13 @@ class Spitball::Remote
     @gemfile_lock = gemfile_lock
     @host = opts[:host]
     @port = opts[:port]
+    @without = (opts[:without] || []).map{|w| w.to_sym}
   end
 
   def copy_to(path)
+    data = generate_remote_tarball
     case path
     when /\.tar\.gz$/, /\.tgz$/
-      data = generate_remote_tarball
       File.open(path, 'w') { |f| f.write data }
     else
       begin
@@ -32,9 +33,12 @@ class Spitball::Remote
     url = URI.parse("http://#{@host}:#{@port}/create")
     req = Net::HTTP::Post.new(url.path)
     req.form_data = {'gemfile' => @gemfile, 'gemfile_lock' => @gemfile_lock}
-
+    req.add_field Spitball::PROTOCOL_HEADER, Spitball::PROTOCOL_VERSION
+    req.add_field Spitball::WITHOUT_HEADER, @without.join(',')
     res = Net::HTTP.new(url.host, url.port).start do |http|
+      http.read_timeout = 3000
       http.request(req) {|r| puts r.read_body }
+      
     end
 
     print "\nDownloading tarball..."; $stdout.flush
@@ -43,6 +47,7 @@ class Spitball::Remote
       case res.code
       when '201', '202' # Created, Accepted
         get_tarball_data res['Location']
+      when '403'
       else
         raise Spitball::ServerFailure, "Expected 2xx response code. Got #{res.code}."
       end

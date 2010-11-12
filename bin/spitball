@@ -20,13 +20,13 @@ opts = OptionParser.new do |opts|
     args[:port] = port
   end
 
-  opts.on('--without a,b,c', Array, 'Excluded groups in the tarball. Does not apply to remote spitballs') do |without|
-    args[:without] = without
+  opts.on('-v', '--version', 'Display the version and quit') do
+    puts Spitball::VERSION
+    exit!(0)
   end
 
-  opts.on('--version') do
-    puts Spitball::VERSION
-    exit 0
+  opts.on('--without a,b,c', Array, 'Excluded groups in the tarball. Does not apply to remote spitballs') do |without|
+    args[:without] = without
   end
 
   opts.separator ""
@@ -49,7 +49,7 @@ gemfile = File.read(args[:gemfile])
 gemfile_lock = File.read("#{args[:gemfile]}.lock")
 
 ball = args[:host] ?
-  Spitball::Remote.new(gemfile, gemfile_lock, :host => args[:host], :port => (args[:port] || 8080).to_i) :
+  Spitball::Remote.new(gemfile, gemfile_lock, :host => args[:host], :port => (args[:port] || 8080).to_i, :without => args[:without]) :
   Spitball.new(gemfile, gemfile_lock, :without => args[:without])
 
 ball.copy_to args[:destination]
