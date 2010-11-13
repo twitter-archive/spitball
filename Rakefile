@@ -29,19 +29,22 @@ namespace :version do
   end
 
   def commit_version(v)
-    system "git add #{VERSION_FILE} && git c -m 'release version #{v}' && git tag #{v}"
+    system "git add #{VERSION_FILE} && git c -m 'release version #{v}'"
   end
 
+  desc "Increment the major version and commit"
   task :incr_major do
     new_v = update_version {|m,_,_| [m+1, 0, 0] }
     commit_version(new_v)
   end
 
+  desc "Increment the minor version and commit"
   task :incr_minor do
     new_v = update_version {|ma,mi,_| [ma, mi+1, 0] }
     commit_version(new_v)
   end
 
+  desc "Increment the patch version and commit"
   task :incr_patch do
     new_v = update_version {|ma,mi,p| [ma, mi, p+1] }
     commit_version(new_v)
