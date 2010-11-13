@@ -46,40 +46,48 @@ end
 # 202 Accepted if it does not. The body of the response is the URI for
 # the tarball.
 post '/create' do
-  ball = Spitball.new(params['gemfile'], params['gemfile_lock'])
-  url = "#{request.url.split("/create").first}/#{ball.digest}.tgz"
-  response['Location'] = url
-
-  if ball.cached?
-    status 201
-    "Bundle tarball pre-cached.\n"
+  request_version = request.env["HTTP_#{Spitball::PROTOCOL_HEADER.gsub(/-/, '_').upcase}"]
+  if request_version != Spitball::PROTOCOL_VERSION
+    status 403
+    "Received version #{request_version} but need version #{Spitball::PROTOCOL_VERSION}"
   else
-    status 202
+    without = request_version = request.env["HTTP_#{Spitball::WITHOUT_HEADER.gsub(/-/, '_').upcase}"]
+    without &&= without.split(',')
+    ball = Spitball.new(params['gemfile'], params['gemfile_lock'], :without => without)
+    url = "#{request.url.split("/create").first}/#{ball.digest}.tgz"
+    response['Location'] = url
 
-    i,o = IO.pipe
+    if ball.cached?
+      status 201
+      "Bundle tarball pre-cached.\n"
+    else
+      status 202
 
-    # fork twice. once so we can have a pid to detach from in order to clean up,
-    #             twice in order to properly redirect stdout for underlying shell commands.
-    pid = fork do
-      baller = open("|-")
-      if baller == nil # child
-        begin
-          ball.cache!
-        rescue Object => e
-          puts "#{e.class}: #{e}", e.backtrace.map{|l| "\t#{l}" }
+      i,o = IO.pipe
+
+      # fork twice. once so we can have a pid to detach from in order to clean up,
+      #             twice in order to properly redirect stdout for underlying shell commands.
+      pid = fork do
+        baller = open("|-")
+        if baller == nil # child
+          begin
+            ball.cache!
+          rescue Object => e
+            puts "#{e.class}: #{e}", e.backtrace.map{|l| "\t#{l}" }
+          end
+        else
+          while buf = baller.read(200)
+            $stdout.print buf
+            o.print buf
+          end
         end
-      else
-        while buf = baller.read(200)
-          $stdout.print buf
-          o.print buf
-        end
+        exit!
       end
-      exit!
+
+      o.close
+      Process.detach(pid)
+
+      Streamer.new(i)
     end
-
-    o.close
-    Process.detach(pid)
-
-    Streamer.new(i)
   end
 end

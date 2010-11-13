@@ -1,4 +1,5 @@
 ROOT_DIR = File.expand_path(File.dirname(__FILE__))
+VERSION_FILE = File.expand_path("lib/spitball/version.rb", ROOT_DIR)
 
 require 'rubygems' rescue nil
 require 'rake'
@@ -12,22 +13,40 @@ Spec::Rake::SpecTask.new(:spec) do |t|
   t.spec_files = FileList['spec/**/*_spec.rb']
 end
 
-# gemification with jeweler
-# FIXME: stop using jeweler when I get smarter.
-begin
-  require 'jeweler'
-  Jeweler::Tasks.new do |gem|
-    gem.name = "spitball"
-    gem.summary = "get a bundle"
-    gem.description = "Use bundler to generate gem tarball packages."
-    gem.email = "freels@twitter.com"
-    gem.homepage = "http://github.com/freels/spitball"
-    gem.authors = ["Matt Freels", "Brandon Mitchell", "Joshua Hull"]
+require 'bundler'
+Bundler::GemHelper.install_tasks
 
-    gem.add_dependency 'sinatra', '>= 1.0'
-    gem.add_development_dependency 'rspec'
-    gem.add_development_dependency 'rr'
+namespace :version do
+  def update_version
+    source = File.read(VERSION_FILE)
+    new_v = nil
+    File.open(VERSION_FILE, 'w') do |f|
+      f.write source.gsub(/\d+\.\d+\.\d+/) {|v|
+        new_v = yield(*v.split(".").map {|i| i.to_i}).join(".")
+      }
+    end
+    new_v
   end
-rescue LoadError
-  puts "Jeweler not available. Install it with: gem install jeweler"
+
+  def commit_version(v)
+    system "git add #{VERSION_FILE} && git c -m 'release version #{v}'"
+  end
+
+  desc "Increment the major version and commit"
+  task :incr_major do
+    new_v = update_version {|m,_,_| [m+1, 0, 0] }
+    commit_version(new_v)
+  end
+
+  desc "Increment the minor version and commit"
+  task :incr_minor do
+    new_v = update_version {|ma,mi,_| [ma, mi+1, 0] }
+    commit_version(new_v)
+  end
+
+  desc "Increment the patch version and commit"
+  task :incr_patch do
+    new_v = update_version {|ma,mi,p| [ma, mi, p+1] }
+    commit_version(new_v)
+  end
 end
