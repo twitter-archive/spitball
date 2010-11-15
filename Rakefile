@@ -1,4 +1,5 @@
 ROOT_DIR = File.expand_path(File.dirname(__FILE__))
+VERSION_FILE = File.expand_path("lib/spitball/version.rb", ROOT_DIR)
 
 require 'rubygems' rescue nil
 require 'rake'
@@ -14,3 +15,38 @@ end
 
 require 'bundler'
 Bundler::GemHelper.install_tasks
+
+namespace :version do
+  def update_version
+    source = File.read(VERSION_FILE)
+    new_v = nil
+    File.open(VERSION_FILE, 'w') do |f|
+      f.write source.gsub(/\d+\.\d+\.\d+/) {|v|
+        new_v = yield(*v.split(".").map {|i| i.to_i}).join(".")
+      }
+    end
+    new_v
+  end
+
+  def commit_version(v)
+    system "git add #{VERSION_FILE} && git c -m 'release version #{v}'"
+  end
+
+  desc "Increment the major version and commit"
+  task :incr_major do
+    new_v = update_version {|m,_,_| [m+1, 0, 0] }
+    commit_version(new_v)
+  end
+
+  desc "Increment the minor version and commit"
+  task :incr_minor do
+    new_v = update_version {|ma,mi,_| [ma, mi+1, 0] }
+    commit_version(new_v)
+  end
+
+  desc "Increment the patch version and commit"
+  task :incr_patch do
+    new_v = update_version {|ma,mi,p| [ma, mi, p+1] }
+    commit_version(new_v)
+  end
+end
