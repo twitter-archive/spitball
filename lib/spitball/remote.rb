@@ -76,6 +76,7 @@ class Spitball::Remote
 
       if (res = Net::HTTP.get_response(uri)).code == '200'
         File.open(cache_file, 'w') {|f| f << res.body}
+        res.body.rewind
         return res.body
       else
         raise Spitball::ServerFailure, "Spitball download failed."
