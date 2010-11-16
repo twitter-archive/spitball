@@ -14,18 +14,21 @@ class Spitball::Remote
     @without = (opts[:without] || []).map{|w| w.to_sym}
     @cache_dir = '/tmp/spitball/client'
     FileUtils.mkdir_p(@cache_dir)
+    use_cache_file
   end
 
   def use_cache_file
-    hash = ::Digest::MD5.hexdigest(([@gemfile, @gemfile_lock, Spitball::PROTOCOL_VERSION] + @without).join('/'))
-    cache_file = File.join(@cache_dir, hash)
     if File.exist?(cache_file)
       @tarball_url = cache_file
     end
   end
 
+  def cache_file
+    hash = ::Digest::MD5.hexdigest(([@host, @port, @gemfile, @gemfile_lock, Spitball::PROTOCOL_VERSION] + @without).join('/'))
+    File.join(@cache_dir, hash)
+  end
+
   def cached?
-    use_cache_file
     !!@tarball_url 
   end
 
@@ -72,6 +75,7 @@ class Spitball::Remote
       uri = URI.parse(location)
 
       if (res = Net::HTTP.get_response(uri)).code == '200'
+        File.open(cache_file, 'w') {|f| f << res.body}
         return res.body
       else
         raise Spitball::ServerFailure, "Spitball download failed."
