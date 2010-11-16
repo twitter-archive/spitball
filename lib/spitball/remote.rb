@@ -29,7 +29,7 @@ class Spitball::Remote
   end
 
   def cached?
-    !!@tarball_url 
+    !!@tarball_url
   end
 
   def cache!(sync = true) # ignore sync
@@ -40,7 +40,7 @@ class Spitball::Remote
     req.form_data = {'gemfile' => @gemfile, 'gemfile_lock' => @gemfile_lock}
     req.add_field Spitball::PROTOCOL_HEADER, Spitball::PROTOCOL_VERSION
     req.add_field Spitball::WITHOUT_HEADER, @without.join(',')
-    
+
     res = Net::HTTP.new(url.host, url.port).start do |http|
       http.read_timeout = 3000
       http.request(req) {|r| puts r.read_body }
