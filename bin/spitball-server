@@ -64,12 +64,14 @@ post '/create' do
       status 202
 
       i,o = IO.pipe
+      o.sync = true
 
       # fork twice. once so we can have a pid to detach from in order to clean up,
       #             twice in order to properly redirect stdout for underlying shell commands.
       pid = fork do
         baller = open("|-")
         if baller == nil # child
+          $stdout.sync = true
           begin
             ball.cache!
           rescue Object => e
