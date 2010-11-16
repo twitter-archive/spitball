@@ -5,8 +5,9 @@ require 'optparse'
 require 'net/http'
 require 'fileutils'
 
-args = {}
+STDOUT.sync = true
 
+args = {}
 opts = OptionParser.new do |opts|
   opts.banner = "Usage: spitball [options] GEMFILE ARCHIVE"
   opts.separator ""
