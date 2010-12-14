@@ -59,7 +59,6 @@ class Spitball
   end
 
   def create_bundle
-    ENV['BUNDLE_GEMFILE'] = gemfile_path # make bundler happy! :) *cry*
     Spitball::Repo.make_cache_dirs
     FileUtils.mkdir_p bundle_path
 
@@ -68,6 +67,7 @@ class Spitball
     File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
 
     parsed_lockfile, dsl = Bundler::FakeLockfileParser.new(gemfile_lock), Bundler::FakeDsl.new(gemfile)
+    raise "You need to run bundle install before you can use spitball" unless (parsed_lockfile.dependencies.map{|d| d.name}.uniq.sort == dsl.__gem_names.uniq.sort)
 
     Dir.chdir(Repo.gemcache_path) do
       parsed_lockfile.specs.each do |spec|

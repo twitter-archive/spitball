@@ -9,9 +9,7 @@ class Spitball::FileLock
   end
 
   def acquire_lock
-
     File.open(pre_lock_path, 'w') {|f| f.write Process.pid }
-
     system "ln #{pre_lock_path} #{path} > /dev/null 2>&1"
     File.read(path).to_i == Process.pid
   ensure
