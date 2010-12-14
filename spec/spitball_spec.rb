@@ -255,3 +255,38 @@ describe Spitball::Digest do
     spitball.hash.should == spitball.digest.hash
   end
 end
+
+describe Spitball do
+  context "mismatched" do
+    before do
+      use_success_bundler
+
+      @gemfile = <<-end_gemfile
+          source :rubygems
+          gem "json_pure"
+          gem "somethingelse"
+        end_gemfile
+
+      @lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{6}/m, "\n")
+        GEM
+          remote: http://rubygems.org/
+          specs:
+            json_pure (1.4.6)
+
+        PLATFORMS
+          ruby
+
+        DEPENDENCIES
+          json_pure
+      end_lockfile
+
+      @spitball = Spitball.new(@gemfile, @lockfile)
+    end
+
+    describe "create_bundle failure" do
+      it "should raise on create_bundle" do
+        proc { @spitball.create_bundle }.should raise_error
+      end
+    end
+  end
+end

@@ -3,11 +3,16 @@ module Bundler
     
     def initialize(file)
       @groups = Hash.new{|h, k| h[k] = []}
+      @gem_names = []
       instance_eval(file)
     end
 
     def __groups
       @groups
+    end
+
+    def __gem_names
+      @gem_names
     end
 
     def group(name, &blk)
@@ -18,6 +23,7 @@ module Bundler
     alias_method :groups, :group
 
     def gem(*args)
+      @gem_names << args.first
       @groups[@current_group] << args.first
     end
     
