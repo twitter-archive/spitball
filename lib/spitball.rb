@@ -94,7 +94,12 @@ class Spitball
     unless File.exist?(cache_dir)
       FileUtils.mkdir_p(cache_dir)
       out = `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(sources)} 2>&1`
-      $? == 0 ? (puts out) : (raise BundleCreationFailure, out)
+      if $? == 0
+        puts out
+      else
+        FileUtils.rm_rf(cache_dir)
+        raise BundleCreationFailure, out
+      end
     else
       puts "Using cached version of #{spec.name} (#{spec.version})"
     end
