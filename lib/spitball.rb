@@ -25,6 +25,7 @@ class Spitball
   attr_reader :gemfile, :gemfile_lock, :without, :options
 
   def initialize(gemfile, gemfile_lock, options = {})
+    Spitball::Repo.make_cache_dirs
     @gemfile      = gemfile
     @gemfile_lock = gemfile_lock
     @options      = options
@@ -36,18 +37,16 @@ class Spitball
   end
 
   def cache!(sync = true)
-    Spitball::Repo.make_cache_dirs
-    unless cached?
-      lock = Spitball::FileLock.new(bundle_path('lock'))
-      if lock.acquire_lock
-        begin
-         create_bundle
-        ensure
-          lock.release_lock
-        end
-      elsif sync
-        sleep 0.1 until cached?
+    return if cached?
+    lock = Spitball::FileLock.new(bundle_path('lock'))
+    if lock.acquire_lock
+      begin
+       create_bundle
+      ensure
+        lock.release_lock
       end
+    elsif sync
+      sleep 0.1 until cached?
     end
   end
 

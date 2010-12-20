@@ -30,6 +30,10 @@ opts = OptionParser.new do |opts|
     args[:without] = without
   end
 
+  opts.on('-g', '--generate-only', "Only generate, don't download") do
+    args[:generate] = true
+  end
+
   opts.separator ""
   opts.separator "environment variables:"
   opts.separator "\tSPITBALL_CACHE\t\t     Specifies the cache dir. Defaults to /tmp/spitball"
@@ -53,4 +57,5 @@ ball = args[:host] ?
   Spitball::Remote.new(gemfile, gemfile_lock, :host => args[:host], :port => (args[:port] || 8080).to_i, :without => args[:without]) :
   Spitball.new(gemfile, gemfile_lock, :without => args[:without])
 
-ball.copy_to args[:destination]
+args[:generate] ? ball.cache! : ball.copy_to(args[:destination])
+
