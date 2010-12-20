@@ -2,7 +2,7 @@ require "strscan"
 
 module Bundler
   class FakeLockfileParser
-    attr_reader :sources, :dependencies, :specs, :platforms
+    attr_reader :sources, :dependencies, :specs, :platforms, :metadata
 
     def initialize(lockfile)
       @platforms    = []
@@ -10,14 +10,18 @@ module Bundler
       @dependencies = []
       @specs        = []
       @state        = :source
-
+      @metadata     = {}
       lockfile.split(/(\r?\n)+/).each do |line|
         if line == "DEPENDENCIES"
           @state = :dependency
         elsif line == "PLATFORMS"
           @state = :platform
+        elsif line == "METADATA"
+          @state = :metadata
+        elsif line =~ /^[A-Z]/
+          @state = :unknown
         else
-          send("parse_#{@state}", line)
+          send("parse_#{@state}", line) unless @state == :unknown
         end
       end
     end
@@ -105,5 +109,21 @@ module Bundler
       end
     end
 
+    def parse_metadata(line)
+      if line =~ /^  ([a-z]+): (.*)$/i
+        value = $2
+        value = true if value == "true"
+        value = false if value == "false"
+
+        key = $1
+
+        if @metadata[key]
+          @metadata[key] = Array(@metadata[key])
+          @metadata[key] << value
+        else
+          @metadata[key] = value
+        end
+      end
+    end
   end
 end
