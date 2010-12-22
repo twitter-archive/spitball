@@ -64,16 +64,20 @@ class Spitball
     # save gemfile and lock file for future reference.
     File.open(gemfile_path, 'w') {|f| f.write gemfile }
     File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
-
-    parsed_lockfile, dsl = Bundler::FakeLockfileParser.new(gemfile_lock), Bundler::FakeDsl.new(gemfile)
-    raise "You need to run bundle install before you can use spitball" unless (parsed_lockfile.dependencies.map{|d| d.name}.uniq.sort == dsl.__gem_names.uniq.sort)
-
-    Dir.chdir(Repo.gemcache_path) do
-      parsed_lockfile.specs.each do |spec|
-        install_gem(spec, parsed_lockfile.sources) unless without.any?{|w| dsl.__groups[w].include?(spec.name)}
+    out = Dir.chdir(bundle_path) { sh "bundle install --path #{Repo.gemcache_path}" }
+    FileUtils.mkdir_p(File.join(bundle_path, 'gems'))
+    namespaced_cache_path = File.join(Repo.gemcache_path, (RUBY_ENGINE rescue "ruby"), RUBY_VERSION.split('.')[0,2].join("."))
+    puts namespaced_cache_path
+    out.scan(/ ([^ ]+) \((.*?)\)\s*\n/m).each do |(gem_name, gem_version)|
+      if gem_name != 'bundler'
+        puts "Copying #{gem_name}-#{gem_version}"
+        sh "cp -fr #{File.join(namespaced_cache_path, "gems", "#{gem_name}-#{gem_version}")} #{File.join(bundle_path, 'gems')}"
       end
     end
-
+    puts "Copying bin"
+    FileUtils.cp_r(File.join(namespaced_cache_path, "bin"), File.join(bundle_path))
+    puts "Copying specifications"
+    FileUtils.cp_r(File.join(namespaced_cache_path, "specifications"), File.join(bundle_path))
     Dir.chdir(bundle_path) do
       Dir["#{bundle_path}/bin/**"].each do |file|
         contents = File.read(file)
@@ -81,8 +85,6 @@ class Spitball
         File.open(file, 'w') {|f| f << contents}
       end
     end
-
-    system "rm -rf #{bundle_path}/cache"
     system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
     system "mv #{tarball_path}.#{Process.pid} #{tarball_path}"
     FileUtils.rm_rf bundle_path
@@ -131,5 +133,15 @@ class Spitball
 
   def tarball_path
     Repo.bundle_path(digest, 'tgz')
+  end
+  
+  def sh_with_code(cmd)
+    out = `#{cmd} 2>&1`
+    [out, $?]
+  end
+
+  def sh(cmd)
+    out, code = sh_with_code(cmd)
+    code == 0 ? out : raise("#{cmd} failed:\n#{out}")
   end
 end
