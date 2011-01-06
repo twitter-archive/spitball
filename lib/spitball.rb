@@ -30,6 +30,9 @@ class Spitball
     @gemfile_lock = gemfile_lock
     @options      = options
     @without      = (options[:without] || []).map{|w| w.to_sym}
+    @parsed_lockfile, @dsl = Bundler::FakeLockfileParser.new(gemfile_lock), Bundler::FakeDsl.new(gemfile)
+    raise "You need to run bundle install before you can use spitball" unless (@parsed_lockfile.dependencies.map{|d| d.name}.uniq.sort == @dsl.__gem_names.uniq.sort)
+    @groups_to_install = @dsl.__groups.keys - @without
   end
 
   def cached?
@@ -65,12 +68,9 @@ class Spitball
     File.open(gemfile_path, 'w') {|f| f.write gemfile }
     File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
 
-    parsed_lockfile, dsl = Bundler::FakeLockfileParser.new(gemfile_lock), Bundler::FakeDsl.new(gemfile)
-    raise "You need to run bundle install before you can use spitball" unless (parsed_lockfile.dependencies.map{|d| d.name}.uniq.sort == dsl.__gem_names.uniq.sort)
-
     Dir.chdir(Repo.gemcache_path) do
-      parsed_lockfile.specs.each do |spec|
-        install_gem(spec, parsed_lockfile.sources) unless without.any?{|w| dsl.__groups[w].include?(spec.name)}
+      @dsl.__gem_names.each do |spec_name|
+        install_gem(@parsed_lockfile.specs.find {|spec| spec.name == spec_name})
       end
     end
 
@@ -88,11 +88,21 @@ class Spitball
     FileUtils.rm_rf bundle_path
   end
 
-  def install_gem(spec, sources)
-    cache_dir = File.join(Repo.gemcache_path, "#{spec.name}-#{::Digest::MD5.hexdigest([spec.name, spec.version, sources_opt(sources)].join('/'))}")
+  def install_gem(spec)
+    if @groups_to_install.any?{|group| @dsl.__groups[group].include?(spec.name)}
+      install_and_copy_spec(spec)
+      spec.dependencies.each do |dep|
+        install_gem(@parsed_lockfile.specs.find {|spec| spec.name == dep.name})
+      end
+    end
+    
+  end
+
+  def install_and_copy_spec(spec)
+    cache_dir = File.join(Repo.gemcache_path, "#{spec.name}-#{::Digest::MD5.hexdigest([spec.name, spec.version, sources_opt(@parsed_lockfile.sources)].join('/'))}")
     unless File.exist?(cache_dir)
       FileUtils.mkdir_p(cache_dir)
-      out = `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(sources)} 2>&1`
+      out = `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(@parsed_lockfile.sources)} 2>&1`
       if $? == 0
         puts out
       else
