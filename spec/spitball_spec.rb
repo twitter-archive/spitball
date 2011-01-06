@@ -28,7 +28,7 @@ describe Spitball do
   describe "cached?" do
     it "returns true if the tarball has already been cached" do
       @spitball.should_not be_cached
-      mock(@spitball).install_gem(anything, anything).times(any_times)
+      mock(@spitball).install_gem(anything).times(any_times)
       @spitball.cache!
       @spitball.should be_cached
     end
@@ -82,7 +82,7 @@ describe Spitball do
 
   describe "create_bundle" do
     it "generates a bundle at the bundle_path" do
-      mock(@spitball).install_gem(anything, anything).times(any_times)
+      mock(@spitball).install_gem(anything).times(any_times)
       capture_stdout { @spitball.send :create_bundle }
       File.exist?(@spitball.send(:tarball_path)).should == true
     end
@@ -127,10 +127,10 @@ describe Spitball do
     
     it "should use without" do
       @spitball = Spitball.new(@gemfile, @lockfile)
-      mock(@spitball).install_gem(anything, anything).times(7)
+      mock(@spitball).install_and_copy_spec(anything).times(1)
       @spitball.send :create_bundle
       @spitball = Spitball.new(@gemfile, @lockfile, :without => 'development')
-      mock(@spitball).install_gem(anything, anything).times(6)
+      mock(@spitball).install_and_copy_spec(anything).times(0)
       @spitball.send :create_bundle
     end
   end
@@ -280,12 +280,11 @@ describe Spitball do
           json_pure
       end_lockfile
 
-      @spitball = Spitball.new(@gemfile, @lockfile)
     end
 
     describe "create_bundle failure" do
       it "should raise on create_bundle" do
-        proc { @spitball.create_bundle }.should raise_error
+        proc { Spitball.new(@gemfile, @lockfile) }.should raise_error
       end
     end
   end

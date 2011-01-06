@@ -12,7 +12,7 @@ require 'rubygems'
 require 'fileutils'
 require 'spec'
 require 'spitball'
-
+require 'phocus'
 
 Spec::Runner.configure do |config|
   config.mock_with :rr

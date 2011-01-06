@@ -7,11 +7,10 @@ class Spitball::Remote
   include Spitball::ClientCommon
 
   def initialize(gemfile, gemfile_lock, opts = {})
-    @gemfile = gemfile
-    @gemfile_lock = gemfile_lock
-    @host = opts[:host]
-    @port = opts[:port]
-    @without = (opts[:without] || []).map{|w| w.to_sym}
+    @gemfile, @gemfile_lock = gemfile, gemfile_lock
+    @host      = opts[:host]
+    @port      = opts[:port]
+    @without   = (opts[:without] || []).map{|w| w.to_sym}
     @cache_dir = File.join(ENV['SPITBALL_CACHE'] || '/tmp/spitball', 'client')
     FileUtils.mkdir_p(@cache_dir)
     use_cache_file
