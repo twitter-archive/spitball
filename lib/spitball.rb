@@ -70,7 +70,9 @@ class Spitball
 
     Dir.chdir(Repo.gemcache_path) do
       @dsl.__gem_names.each do |spec_name|
-        install_gem(@parsed_lockfile.specs.find {|spec| spec.name == spec_name})
+        if @groups_to_install.any?{|group| @dsl.__groups[group].include?(spec_name)}
+          install_gem(@parsed_lockfile.specs.find {|spec| spec.name == spec_name})
+        end
       end
     end
 
@@ -89,13 +91,10 @@ class Spitball
   end
 
   def install_gem(spec)
-    if @groups_to_install.any?{|group| @dsl.__groups[group].include?(spec.name)}
-      install_and_copy_spec(spec)
-      spec.dependencies.each do |dep|
-        install_gem(@parsed_lockfile.specs.find {|spec| spec.name == dep.name})
-      end
+    install_and_copy_spec(spec)
+    spec.dependencies.each do |dep|
+      install_gem(@parsed_lockfile.specs.find {|spec| spec.name == dep.name})
     end
-    
   end
 
   def install_and_copy_spec(spec)
