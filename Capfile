@@ -1,6 +1,8 @@
 require 'rubygems'
 require 'railsless-deploy'
 
+raise("You must set SPITBALL_HOST") unless ENV['SPITBALL_HOST']
+
 default_environment.update(
   'PATH' => '/usr/local/spitball/vendor/bin:/opt/local/bin:$PATH',
   'GEM_PATH' => '/usr/local/spitball/vendor',
