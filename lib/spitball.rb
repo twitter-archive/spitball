@@ -97,11 +97,15 @@ class Spitball
     end
   end
 
+  def gem_cmd
+    ENV['GEM_CMD'] || 'cmd'
+  end
+
   def install_and_copy_spec(spec)
     cache_dir = File.join(Repo.gemcache_path, "#{spec.name}-#{::Digest::MD5.hexdigest([spec.name, spec.version, sources_opt(@parsed_lockfile.sources)].join('/'))}")
     unless File.exist?(cache_dir)
       FileUtils.mkdir_p(cache_dir)
-      out = `gem install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(@parsed_lockfile.sources)} 2>&1`
+      out = `#{gem_cmd} install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(@parsed_lockfile.sources)} 2>&1`
       if $? == 0
         puts out
       else
