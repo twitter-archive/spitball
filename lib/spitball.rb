@@ -69,9 +69,14 @@ class Spitball
     File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
 
     Dir.chdir(Repo.gemcache_path) do
-      @dsl.__gem_names.each do |spec_name|
+      @dsl.__gem_names.each do |spec|
+        spec_name = spec.first
         if @groups_to_install.any?{|group| @dsl.__groups[group].include?(spec_name)}
-          install_gem(@parsed_lockfile.specs.find {|spec| spec.name == spec_name})
+          if found_spec = @parsed_lockfile.specs.find {|spec| spec.name == spec_name}
+            install_gem(found_spec)
+          else
+            raise "Cannot install #{spec * ' '}"
+          end
         end
       end
     end
@@ -91,21 +96,28 @@ class Spitball
   end
 
   def install_gem(spec)
-    install_and_copy_spec(spec)
+    install_and_copy_spec(spec.name, spec.version)
     spec.dependencies.each do |dep|
-      install_gem(@parsed_lockfile.specs.find {|spec| spec.name == dep.name})
+      spec_name = dep.name
+      if found_spec = @parsed_lockfile.specs.find {|spec| spec.name == spec_name}
+        install_gem(found_spec)
+      elsif spec_name == 'bundler'
+        install_and_copy_spec(dep.name, dep.requirements_list.first || '> 0')
+      else
+        raise "Cannot install #{dep.inspect}"
+      end
     end
   end
 
   def gem_cmd
-    ENV['GEM_CMD'] || 'cmd'
+    ENV['GEM_CMD'] || 'gem'
   end
 
-  def install_and_copy_spec(spec)
-    cache_dir = File.join(Repo.gemcache_path, "#{spec.name}-#{::Digest::MD5.hexdigest([spec.name, spec.version, sources_opt(@parsed_lockfile.sources)].join('/'))}")
+  def install_and_copy_spec(name, version)
+    cache_dir = File.join(Repo.gemcache_path, "#{name}-#{::Digest::MD5.hexdigest([name, version, sources_opt(@parsed_lockfile.sources)].join('/'))}")
     unless File.exist?(cache_dir)
       FileUtils.mkdir_p(cache_dir)
-      out = `#{gem_cmd} install #{spec.name} -v'#{spec.version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(@parsed_lockfile.sources)} 2>&1`
+      out = `#{gem_cmd} install #{name} -v'#{version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(@parsed_lockfile.sources)} 2>&1`
       if $? == 0
         puts out
       else
@@ -113,7 +125,7 @@ class Spitball
         raise BundleCreationFailure, out
       end
     else
-      puts "Using cached version of #{spec.name} (#{spec.version})"
+      puts "Using cached version of #{name} (#{version})"
     end
     `cp -R #{cache_dir}/* #{bundle_path}`
   end
