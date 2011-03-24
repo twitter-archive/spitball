@@ -7,7 +7,7 @@ default_environment.update(
   'PATH' => '/usr/local/spitball/vendor/bin:/opt/local/bin:$PATH',
   'GEM_PATH' => '/usr/local/spitball/vendor',
   'LD_LIBRARY_PATH' => '/opt/local/lib'
-                           )
+)
 
 role :app, ENV['SPITBALL_HOST']
 
@@ -21,8 +21,10 @@ set :ssh_options, {
 }
 
 set :deploy_to, "/usr/local/#{application}"
-set :scm, 'git'
-set :repository, 'git://github.com/freels/spitball.git'
+set :repository, "."
+set :scm, :none
+set :deploy_via, :copy
+set :working_copy, '.'
 set :copy_exclude, '.git'
 set :branch, variables[:branch] || 'self_hosting'
 
