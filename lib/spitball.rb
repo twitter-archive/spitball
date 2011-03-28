@@ -15,6 +15,10 @@ class Spitball
   class ClientError < StandardError; end
   class BundleCreationFailure < StandardError; end
 
+  def self.gem_cmd
+    ENV['GEM_CMD'] || 'gem'
+  end
+
   PROTOCOL_VERSION = '1'
   PROTOCOL_HEADER = "X-Spitball-Protocol"
   WITHOUT_HEADER = "X-Spitball-Without"
@@ -109,15 +113,11 @@ class Spitball
     end
   end
 
-  def gem_cmd
-    ENV['GEM_CMD'] || 'gem'
-  end
-
   def install_and_copy_spec(name, version)
     cache_dir = File.join(Repo.gemcache_path, "#{name}-#{::Digest::MD5.hexdigest([name, version, sources_opt(@parsed_lockfile.sources)].join('/'))}")
     unless File.exist?(cache_dir)
       FileUtils.mkdir_p(cache_dir)
-      out = `#{gem_cmd} install #{name} -v'#{version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(@parsed_lockfile.sources)} 2>&1`
+      out = `#{Spitball.gem_cmd} install #{name} -v'#{version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(@parsed_lockfile.sources)} 2>&1`
       if $? == 0
         puts out
       else

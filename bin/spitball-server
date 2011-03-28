@@ -29,6 +29,11 @@ get '/list' do
   JSON.dump Spitball::Repo.cached_digests
 end
 
+get '/env' do
+  content_type :text
+  `#{$:.inspect}\n#{Spitball.gem_cmd} env`
+end
+
 # return tgz or gemfile of cached SHA or 404
 get '/:digest.:format' do |digest, format|
   error 400 unless ['tgz', 'gemfile'].include? format
