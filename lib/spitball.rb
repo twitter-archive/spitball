@@ -131,13 +131,14 @@ class Spitball
   end
 
   def sources_opt(sources)
-    sources.
-      map{|s| s.remotes}.flatten.
-      map{|s| s.to_s}.
-      sort.
-      map{|s| %w{gemcutter rubygems rubyforge}.include?(s) ? "http://rubygems.org" : s}.
-      map{|s| "--source #{s}"}.
-      join(' ')
+    ENV['SOURCE_OVERRIDE'] || 
+      sources.
+        map{|s| s.remotes}.flatten.
+        map{|s| s.to_s}.
+        sort.
+        map{|s| %w{gemcutter rubygems rubyforge}.include?(s) ? "http://rubygems.org" : s}.
+        map{|s| "--source #{s}"}.
+        join(' ')
   end
 
   # Paths
