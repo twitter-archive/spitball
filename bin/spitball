@@ -36,7 +36,7 @@ opts = OptionParser.new do |opts|
 
   opts.separator ""
   opts.separator "environment variables:"
-  opts.separator "\tSPITBALL_CACHE\t\t     Specifies the cache dir. Defaults to /tmp/spitball"
+  opts.separator "\tSPITBALL_CACHE\t\t     Specifies the cache dir. Defaults to /tmp/spitball.$USER"
   opts.separator ""
 end
 
