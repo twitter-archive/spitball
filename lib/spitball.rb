@@ -78,6 +78,8 @@ class Spitball
         if @groups_to_install.any?{|group| @dsl.__groups[group].include?(spec_name)}
           if found_spec = @parsed_lockfile.specs.find {|spec| spec.name == spec_name}
             install_gem(found_spec)
+          elsif spec_name == 'bundler'
+            install_and_copy_spec(spec_name, spec.size > 1 ? spec.last : '> 0')
           else
             raise "Cannot install #{spec * ' '}"
           end
@@ -131,13 +133,14 @@ class Spitball
   end
 
   def sources_opt(sources)
-    sources.
-      map{|s| s.remotes}.flatten.
-      map{|s| s.to_s}.
-      sort.
-      map{|s| %w{gemcutter rubygems rubyforge}.include?(s) ? "http://rubygems.org" : s}.
-      map{|s| "--source #{s}"}.
-      join(' ')
+    Array(ENV['SOURCE_OVERRIDE'] || 
+      sources.
+        map{|s| s.remotes}.flatten.
+        map{|s| s.to_s}.
+        sort.
+        map{|s| %w{gemcutter rubygems rubyforge}.include?(s) ? "http://rubygems.org" : s}).
+        map{|s| "--source #{s}"}.
+        join(' ')
   end
 
   # Paths
