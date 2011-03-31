@@ -124,13 +124,13 @@ describe Spitball do
           activerecord
       end_lockfile
     end
-    
+
     it "should use without" do
       @spitball = Spitball.new(@gemfile, @lockfile)
-      mock(@spitball).install_and_copy_spec(anything).times(9)
+      mock(@spitball).install_and_copy_spec(anything, anything).times(9)
       @spitball.send :create_bundle
       @spitball = Spitball.new(@gemfile, @lockfile, :without => 'development')
-      mock(@spitball).install_and_copy_spec(anything).times(0)
+      mock(@spitball).install_and_copy_spec(anything, anything).times(0)
       @spitball.send :create_bundle
     end
   end
