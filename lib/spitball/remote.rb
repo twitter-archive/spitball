@@ -11,7 +11,7 @@ class Spitball::Remote
     @host      = opts[:host]
     @port      = opts[:port]
     @without   = (opts[:without] || []).map{|w| w.to_sym}
-    @cache_dir = File.join(ENV['SPITBALL_CACHE'] || '/tmp/spitball.#{ENV['USER']}', 'client')
+    @cache_dir = File.join(ENV['SPITBALL_CACHE'] || "/tmp/spitball.#{ENV['USER']}", 'client')
     FileUtils.mkdir_p(@cache_dir)
     use_cache_file
   end
