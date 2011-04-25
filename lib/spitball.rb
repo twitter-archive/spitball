@@ -79,7 +79,7 @@ class Spitball
           if found_spec = @parsed_lockfile.specs.find {|spec| spec.name == spec_name}
             install_gem(found_spec)
           elsif spec_name == 'bundler'
-            install_and_copy_spec(spec_name, spec.size > 1 ? spec.last : '> 0')
+            install_and_copy_spec(spec_name, '>= 0')
           else
             raise "Cannot install #{spec * ' '}"
           end
