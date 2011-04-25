@@ -9,13 +9,11 @@ Gem::Specification.new do |s|
   s.authors     = ["Matt Freels", "Brandon Mitchell", "Joshua Hull"]
   s.email       = "freels@twitter.com"
   s.homepage    = "http://rubygems.org/gems/spitball"
-  s.summary     = %q{Use bundler to generate gem tarball packages.}
+  s.summary     = %q{Use bundler to generate gem tarball packages}
   s.description = %q{Use bundler to generate gem tarball packages.}
 
   s.rubyforge_project = "spitball"
 
-  s.add_dependency 'sinatra', '>= 1.0'
-  s.add_dependency 'json'
   s.add_development_dependency 'rspec', "~> 1.3.0"
   s.add_development_dependency 'diff-lcs'
   s.add_development_dependency 'rr'
