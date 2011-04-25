@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'sinatra', '>= 1.0'
   s.add_dependency 'json'
   s.add_development_dependency 'rspec', "~> 1.3.0"
+  s.add_development_dependency 'diff-lcs'
   s.add_development_dependency 'rr'
   s.add_development_dependency 'rake'
   s.add_development_dependency 'phocus'
