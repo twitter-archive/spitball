@@ -18,8 +18,13 @@ namespace :spitball do
   Bundler::GemHelper.install_tasks(:name => 'spitball')
 end
 
+class NonTaggingGemHelper < Bundler::GemHelper
+  def guard_already_tagged; end
+  def tag_version; yield if block_given?; end
+end
+
 namespace :spitball_server do
-  Bundler::GemHelper.install_tasks(:name => 'spitball-server')
+  NonTaggingGemHelper.install_tasks(:name => 'spitball-server')
 end
 
 desc "build spitball/spitball-server"
