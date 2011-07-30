@@ -20,7 +20,7 @@ pull packages down from said server.
             --version
 
     environment variables:
-            SPITBALL_CACHE		     Specifies the cache dir. Defaults to /tmp/spitball
+            SPITBALL_CACHE		           Specifies the cache dir. Defaults to /tmp/spitball-username
 
 ### TODO
 

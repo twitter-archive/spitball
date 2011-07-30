@@ -14,39 +14,19 @@ Spec::Rake::SpecTask.new(:spec) do |t|
 end
 
 require 'bundler'
-Bundler::GemHelper.install_tasks
-
-namespace :version do
-  def update_version
-    source = File.read(VERSION_FILE)
-    new_v = nil
-    File.open(VERSION_FILE, 'w') do |f|
-      f.write source.gsub(/\d+\.\d+\.\d+/) {|v|
-        new_v = yield(*v.split(".").map {|i| i.to_i}).join(".")
-      }
-    end
-    new_v
-  end
-
-  def commit_version(v)
-    system "git add #{VERSION_FILE} && git c -m 'release version #{v}'"
-  end
-
-  desc "Increment the major version and commit"
-  task :incr_major do
-    new_v = update_version {|m,_,_| [m+1, 0, 0] }
-    commit_version(new_v)
-  end
-
-  desc "Increment the minor version and commit"
-  task :incr_minor do
-    new_v = update_version {|ma,mi,_| [ma, mi+1, 0] }
-    commit_version(new_v)
-  end
-
-  desc "Increment the patch version and commit"
-  task :incr_patch do
-    new_v = update_version {|ma,mi,p| [ma, mi, p+1] }
-    commit_version(new_v)
-  end
+namespace :spitball do
+  Bundler::GemHelper.install_tasks(:name => 'spitball')
 end
+
+namespace :spitball_server do
+  Bundler::GemHelper.install_tasks(:name => 'spitball-server')
+end
+
+desc "build spitball/spitball-server"
+task :build => [:'spitball:build', :'spitball_server:build']
+
+desc "install spitball/spitball-server"
+task :install => [:'spitball:install', :'spitball_server:install']
+
+desc "release spitball/spitball-server"
+task :release => [:'spitball:release', :'spitball_server:release']
