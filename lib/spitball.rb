@@ -3,6 +3,8 @@ require 'digest/md5'
 require 'ext/bundler_lockfile_parser'
 require 'ext/bundler_fake_dsl'
 
+$pwd = Dir.pwd
+
 class Spitball
   require 'spitball/client_common'
   require 'spitball/digest'
@@ -33,7 +35,7 @@ class Spitball
     @gemfile      = gemfile
     @gemfile_lock = gemfile_lock
     @options      = options
-    @without      = (options[:without] || []).map{|w| w.to_sym}
+    @without      = options[:without].is_a?(Enumerable) ? options[:without].map(&:to_sym) : (options[:without] ? [options[:without].to_sym] : [])
     @parsed_lockfile, @dsl = Bundler::FakeLockfileParser.new(gemfile_lock), Bundler::FakeDsl.new(gemfile)
     raise "You need to run bundle install before you can use spitball" unless (@parsed_lockfile.dependencies.map{|d| d.name}.uniq.sort == @dsl.__gem_names.uniq.sort)
     @groups_to_install = @dsl.__groups.keys - @without
@@ -74,7 +76,7 @@ class Spitball
 
     Dir.chdir(Repo.gemcache_path) do
       @dsl.__gem_names.each do |spec|
-        spec_name = spec.first
+        spec_name = spec
         if @groups_to_install.any?{|group| @dsl.__groups[group].include?(spec_name)}
           if found_spec = @parsed_lockfile.specs.find {|spec| spec.name == spec_name}
             install_gem(found_spec)
@@ -119,7 +121,10 @@ class Spitball
     cache_dir = File.join(Repo.gemcache_path, "#{name}-#{::Digest::MD5.hexdigest([name, version, sources_opt(@parsed_lockfile.sources)].join('/'))}")
     unless File.exist?(cache_dir)
       FileUtils.mkdir_p(cache_dir)
-      out = `#{Spitball.gem_cmd} install #{name} -v'#{version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(@parsed_lockfile.sources)} 2>&1`
+      out = ""
+      Dir.chdir($pwd) do
+        out = `#{Spitball.gem_cmd} install #{name} -v'#{version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(@parsed_lockfile.sources)} 2>&1`
+      end
       if $? == 0
         puts out
       else
@@ -133,7 +138,7 @@ class Spitball
   end
 
   def sources_opt(sources)
-    Array(ENV['SOURCE_OVERRIDE'] || 
+    Array(ENV['SOURCE_OVERRIDE'] ||
       sources.
         map{|s| s.remotes}.flatten.
         map{|s| s.to_s}.
