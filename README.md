@@ -1,4 +1,4 @@
-## spitball [![Build Status](https://secure.travis-ci.org/twitter/spitball.png?branch=master)](http://travis-ci.org/twitter/spitball)
+## spitball [![Build Status](https://secure.travis-ci.org/twitter/spitball.png?branch=master)](http://travis-ci.org/twitter/spitball) [![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/twitter/spitball)
 
 A very simple gem package generation tool built on `bundler`. Pass it a
 gem file, it spits out a tarball of the generated gem
