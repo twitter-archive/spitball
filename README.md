@@ -1,4 +1,4 @@
-## spitball
+## spitball [![Build Status](https://travis-ci.org/twitter/spitball.png?branch=master)](https://travis-ci.org/twitter/spitball)
 
 A very simple gem package generation tool built on `bundler`. Pass it a
 gem file, it spits out a tarball of the generated gem
