@@ -1,4 +1,4 @@
-require 'spec/spec_helper'
+require './spec/spec_helper'
 
 describe Spitball do
   before do
@@ -124,7 +124,7 @@ describe Spitball do
           activerecord
       end_lockfile
     end
-    
+
     it "should use without" do
       @spitball = Spitball.new(@gemfile, @lockfile)
       mock(@spitball).install_and_copy_spec(anything, anything).times(9)

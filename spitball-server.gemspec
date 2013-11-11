@@ -18,6 +18,7 @@ Gem::Specification.new do |s|
   s.executables   = ['spitball-server', 'spitball-cache-cleanup']
   s.require_paths = ["lib"]
 
+  s.add_dependency 'json'
   s.add_dependency 'sinatra', '~> 1.2.0'
   s.add_development_dependency 'rspec', "~> 1.3.0"
   s.add_development_dependency 'diff-lcs'
