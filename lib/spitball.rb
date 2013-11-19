@@ -2,6 +2,7 @@ require 'fileutils'
 require 'digest/md5'
 require 'ext/bundler_lockfile_parser'
 require 'ext/bundler_fake_dsl'
+require 'sem_ver'
 
 $pwd = Dir.pwd
 
@@ -145,6 +146,7 @@ class Spitball
         sort.
         map{|s| %w{gemcutter rubygems rubyforge}.include?(s) ? "http://rubygems.org" : s}).
         map{|s| "--source #{s}"}.
+        map{|s| "#{"--clear-sources " if SemVer.parse(Gem.rubygems_version.to_s) >= SemVer.parse('1.4.0') }#{s}"}.
         join(' ')
   end
 
