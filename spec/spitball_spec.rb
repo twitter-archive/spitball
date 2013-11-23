@@ -139,14 +139,14 @@ describe Spitball do
     it "does not add --clear sources for rubygems >= 1.4.0" do
       @spitball = Spitball.new(@gemfile, @lockfile)
       parsed_lockfile =  @spitball.instance_variable_get("@parsed_lockfile")
-      stub(Gem).rubygems_version { "1.3.10" }
+      Gem::VERSION = "1.3.10"
       @spitball.send(:sources_opt, parsed_lockfile.sources).should == "--source http://rubygems.org/"
     end
 
     it "does not add --clear sources for rubygems >= 1.4.0" do
       @spitball = Spitball.new(@gemfile, @lockfile)
       parsed_lockfile =  @spitball.instance_variable_get("@parsed_lockfile")
-      stub(Gem).rubygems_version { "1.4.0" }
+      Gem::VERSION = "1.4.0"
       @spitball.send(:sources_opt, parsed_lockfile.sources).should == "--clear-sources --source http://rubygems.org/"
     end
   end
