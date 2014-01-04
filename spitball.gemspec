@@ -13,6 +13,7 @@ Gem::Specification.new do |s|
 
   s.rubyforge_project = "spitball"
 
+  s.add_dependency 'sem_ver'
   s.add_development_dependency 'rspec', "~> 1.3.0"
   s.add_development_dependency 'diff-lcs'
   s.add_development_dependency 'rr'
