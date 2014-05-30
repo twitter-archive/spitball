@@ -1,6 +1,6 @@
 module Bundler
   class FakeDsl
-    
+
     def initialize(file)
       @groups = Hash.new{|h, k| h[k] = []}
       @gems = []
@@ -19,10 +19,12 @@ module Bundler
       __gems.map(&:first)
     end
 
-    def group(name, &blk)
-      @current_group = name.to_sym
-      instance_eval(&blk)
-      @current_group = nil
+    def group(*group_names, &blk)
+      group_names.each do |name|
+        @current_group = name.to_sym
+        instance_eval(&blk)
+        @current_group = nil
+      end
     end
     alias_method :groups, :group
 
@@ -30,7 +32,7 @@ module Bundler
       @gems << args
       @groups[@current_group] << args.first
     end
-    
+
     def method_missing(*args)
     end
   end
