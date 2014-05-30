@@ -305,3 +305,55 @@ describe Spitball do
     end
   end
 end
+
+describe Bundler::FakeDsl do
+  it "should support a single group" do
+    gemfile = <<-end_gemfile
+        source :rubygems
+        gem "json_pure"
+
+        group :development do
+          gem 'rails'
+          gem 'json_pure'
+        end
+      end_gemfile
+
+    dsl = Bundler::FakeDsl.new(gemfile)
+    dsl.__groups[:development].should == ["rails", "json_pure"]
+  end
+
+  it "should support multiple groups in one line" do
+    gemfile = <<-end_gemfile
+        source :rubygems
+        gem "json_pure"
+
+        group :development, :test do
+          gem 'rails'
+          gem 'json_pure'
+        end
+      end_gemfile
+
+    dsl = Bundler::FakeDsl.new(gemfile)
+    dsl.__groups[:development].should == ["rails", "json_pure"]
+    dsl.__groups[:test].should == ["rails", "json_pure"]
+  end
+
+  it "should support multiple groups on several lines" do
+    gemfile = <<-end_gemfile
+        source :rubygems
+        gem "json_pure"
+
+        group :development do
+          gem 'rails'
+        end
+
+        group :test do
+          gem 'json_pure'
+        end
+      end_gemfile
+
+    dsl = Bundler::FakeDsl.new(gemfile)
+    dsl.__groups[:development].should == ["rails"]
+    dsl.__groups[:test].should == ["json_pure"]
+  end
+end
