@@ -5,6 +5,7 @@ require 'optparse'
 require 'sinatra'
 require 'json'
 
+# TODO: Sinatra needs to be updated. Once we update let's add in auto-reload.
 # require "sinatra/reloader" if development?
 
 # cargo culting sinatra's option parser, since it has trouble
