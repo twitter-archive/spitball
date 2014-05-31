@@ -3,15 +3,19 @@
 <div style="float: left; width: 50%;">
   <h3>Env</h3>
   <div><pre><%= @env %></pre></div>
-  <h3>Cached Digests</h3>
+  <h3><%= @digests.length %> Cached Digests</h3>
+  <div style="min-height: 400px; overflow: auto;">
+  <ul>
   <% for digest in @digests %>
-    <div><%= digest %> <a href="/<%= digest %>.tgz">tgz</a></div>
+    <li><%= digest %> <a href="/<%= digest %>.tgz">tgz</a></li>
   <% end %>
+  </ul>
+</div>
 </div>
 
 <div style="float: left;">
   <h3>Upload</h3>
-  <form method="post" action="create">
+  <form method="post" action="/create_by_form" enctype='multipart/form-data'>
     <div>Gemfile: <input type="file" name="gemfile"/></div>
     <div>Gemfile.lock: <input type="file" name="gemfile_lock"/></div>
     <div>Without groups: <input type="text" name="without"/></div>

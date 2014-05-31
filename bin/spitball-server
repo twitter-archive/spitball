@@ -54,72 +54,118 @@ get '/:digest.:format' do |digest, format|
   send_file Spitball::Repo.bundle_path(digest, format), :type => format
 end
 
+# A common set of validation for the create spitball methods
+before '/create*' do
+  request_version = request.env["HTTP_#{Spitball::PROTOCOL_HEADER.gsub(/-/, '_').upcase}"] || params['protocol_version']
+
+  if request_version != Spitball::PROTOCOL_VERSION
+    halt 403, "Received version #{request_version} but need version #{Spitball::PROTOCOL_VERSION}"
+  end
+
+  if params[:gemfile].nil?
+    halt 400, "gemfile parameter was null. Please supply a valid Gemfile"
+  end
+
+  if params[:gemfile_lock].nil?
+    halt 400, "gemfile_lock parameter was null. Please supply a valid Gemfile.lock"
+  end
+
+  @without = request_version = request.env["HTTP_#{Spitball::WITHOUT_HEADER.gsub(/-/, '_').upcase}"] || params['without']
+  @without &&= @without.split(',')
+end
+
 class Streamer
   def initialize(io); @io = io end
   def each; while buf = @io.read(200); yield buf end end
 end
 
-# POST a gemfile. Returns 201 Created if the bundle already exists, or
+post '/create_by_form' do
+
+  # More specific validation checking for form upload data
+  if params[:gemfile][:tempfile].nil?
+    halt 400, "gemfile parameter was null. Please supply a valid Gemfile"
+  end
+
+  if params[:gemfile_lock][:tempfile].nil?
+    halt 400, "gemfile_lock parameter was null. Please supply a valid Gemfile.lock"
+  end
+
+  # begin
+    ball = Spitball.new(params[:gemfile][:tempfile].read, params[:gemfile_lock][:tempfile].read, :without => @without)
+  # rescue Object => e
+  #   puts "error"
+  #   puts "error"
+  #   puts e.backtrace
+  #   status 500
+  #   return
+  # end
+
+  spitball_url = "/#{ball.digest}.tgz"
+
+  if ball.cached?
+    redirect to(spitball_url)
+  else
+    status 202
+    create_spitball(ball)
+    body "Your spitball is being generated. Please check #{spitball_url} in a few minutes"
+  end
+end
+
+# POST a gemfile from a command line client. Returns 201 Created if the bundle already exists, or
 # 202 Accepted if it does not. The body of the response is the URI for
 # the tarball.
 post '/create' do
 
-  request_version = request.env["HTTP_#{Spitball::PROTOCOL_HEADER.gsub(/-/, '_').upcase}"] || params['protocol_version']
-  without = request.env["HTTP_#{Spitball::WITHOUT_HEADER.gsub(/-/, '_').upcase}"] || params['without']
+  # begin
+    ball = Spitball.new(params[:gemfile], params[:gemfile_lock], :without => @without)
+  # rescue Object => e
+  #   puts "error"
+  #   puts "error"
+  #   puts e.backtrace
+  #   status 500
+  #   return
+  # end
 
-  if request_version != Spitball::PROTOCOL_VERSION
-    status 403
-    "Received version #{request_version} but need version #{Spitball::PROTOCOL_VERSION}"
+  response['Location'] = "#{request.url.split("/create").first}/#{ball.digest}.tgz"
+
+  if ball.cached?
+    status 201
+    "Bundle tarball pre-cached.\n"
   else
-    without = request_version = without
-    without &&= without.split(',')
-
-    # begin
-      ball = Spitball.new(params['gemfile'], params['gemfile_lock'], :without => without)
-    # rescue Object => e
-    #   puts "error"
-    #   puts "error"
-    #   puts e.backtrace
-    #   status 500
-    #   return
-    # end
-
-    url = "#{request.url.split("/create").first}/#{ball.digest}.tgz"
-    response['Location'] = url
-
-    if ball.cached?
-      status 201
-      "Bundle tarball pre-cached.\n"
-    else
-      status 202
-
-      i,o = IO.pipe
-      o.sync = true
-
-      # fork twice. once so we can have a pid to detach from in order to clean up,
-      #             twice in order to properly redirect stdout for underlying shell commands.
-      pid = fork do
-        baller = open("|-")
-        if baller == nil # child
-          $stdout.sync = true
-          begin
-            ball.cache!
-          rescue Object => e
-            puts "#{e.class}: #{e}", e.backtrace.map{|l| "\t#{l}" }
-          end
-        else
-          while buf = baller.read(200)
-            $stdout.print buf
-            o.print buf
-          end
-        end
-        exit!
-      end
-
-      o.close
-      Process.detach(pid)
-
-      Streamer.new(i)
-    end
+    status 202
+    create_spitball(ball)
   end
+end
+
+private
+
+def create_spitball(spitball)
+
+  i,o = IO.pipe
+  o.sync = true
+
+  # fork twice. once so we can have a pid to detach from in order to clean up,
+  #             twice in order to properly redirect stdout for underlying shell commands.
+  pid = fork do
+    baller = open("|-")
+    if baller == nil # child
+      $stdout.sync = true
+      begin
+        spitball.cache!
+      rescue Object => e
+        puts "#{e.class}: #{e}", e.backtrace.map{|l| "\t#{l}" }
+      end
+    else
+      while buf = baller.read(200)
+        $stdout.print buf
+        o.print buf
+      end
+    end
+    exit!
+  end
+
+  o.close
+  Process.detach(pid)
+
+  Streamer.new(i)
 end
