@@ -5,6 +5,8 @@ require 'optparse'
 require 'sinatra'
 require 'json'
 
+# require "sinatra/reloader" if development?
+
 # cargo culting sinatra's option parser, since it has trouble
 # with rubygem stub files
 
@@ -19,9 +21,19 @@ OptionParser.new { |op|
 # always run
 set :run, true
 
+set :root, File.dirname(__FILE__)
+set :views, File.expand_path(File.join(settings.root, '..', 'lib', 'templates'))
+
 mime_type :gemfile, 'text/plain'
 mime_type :lock, 'text/plain'
 mime_type :tgz, 'application/x-compressed'
+
+get '/' do
+  @digests = Spitball::Repo.cached_digests
+  @env = `#{$:.inspect}\n#{Spitball.gem_cmd} env`
+  @protocol_version = Spitball::PROTOCOL_VERSION
+  erb :index
+end
 
 # return json array of cached SHAs
 get '/list' do
@@ -51,14 +63,27 @@ end
 # 202 Accepted if it does not. The body of the response is the URI for
 # the tarball.
 post '/create' do
-  request_version = request.env["HTTP_#{Spitball::PROTOCOL_HEADER.gsub(/-/, '_').upcase}"]
+
+  request_version = request.env["HTTP_#{Spitball::PROTOCOL_HEADER.gsub(/-/, '_').upcase}"] || params['protocol_version']
+  without = request.env["HTTP_#{Spitball::WITHOUT_HEADER.gsub(/-/, '_').upcase}"] || params['without']
+
   if request_version != Spitball::PROTOCOL_VERSION
     status 403
     "Received version #{request_version} but need version #{Spitball::PROTOCOL_VERSION}"
   else
-    without = request_version = request.env["HTTP_#{Spitball::WITHOUT_HEADER.gsub(/-/, '_').upcase}"]
+    without = request_version = without
     without &&= without.split(',')
-    ball = Spitball.new(params['gemfile'], params['gemfile_lock'], :without => without)
+
+    # begin
+      ball = Spitball.new(params['gemfile'], params['gemfile_lock'], :without => without)
+    # rescue Object => e
+    #   puts "error"
+    #   puts "error"
+    #   puts e.backtrace
+    #   status 500
+    #   return
+    # end
+
     url = "#{request.url.split("/create").first}/#{ball.digest}.tgz"
     response['Location'] = url
 
