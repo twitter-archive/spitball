@@ -90,15 +90,8 @@ post '/create_by_form' do
     halt 400, "gemfile_lock parameter was null. Please supply a valid Gemfile.lock"
   end
 
-  # begin
-    ball = Spitball.new(params[:gemfile][:tempfile].read, params[:gemfile_lock][:tempfile].read, :without => @without)
-  # rescue Object => e
-  #   puts "error"
-  #   puts "error"
-  #   puts e.backtrace
-  #   status 500
-  #   return
-  # end
+  # Since this is just a debugging form, I think it's ok to let any exception bubble up to the user
+  ball = Spitball.new(params[:gemfile][:tempfile].read, params[:gemfile_lock][:tempfile].read, :without => @without)
 
   spitball_url = "/#{ball.digest}.tgz"
 
@@ -116,15 +109,14 @@ end
 # the tarball.
 post '/create' do
 
-  # begin
+  # Spitball was previously returning the entire html stack trace on errors. This made it extremely difficult
+  # to debug on the client side. Gracefully handle errors here and return them nicely to the user.
+  begin
     ball = Spitball.new(params[:gemfile], params[:gemfile_lock], :without => @without)
-  # rescue Object => e
-  #   puts "error"
-  #   puts "error"
-  #   puts e.backtrace
-  #   status 500
-  #   return
-  # end
+  rescue Object => e
+    puts e.backtrace
+    halt 500, e.message
+  end
 
   response['Location'] = "#{request.url.split("/create").first}/#{ball.digest}.tgz"
 

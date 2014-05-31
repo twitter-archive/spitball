@@ -17,6 +17,7 @@ class Spitball
   class ServerFailure < StandardError; end
   class ClientError < StandardError; end
   class BundleCreationFailure < StandardError; end
+  class GemfileParsingError < StandardError; end
 
   def self.gem_cmd
     ENV['GEM_CMD'] || 'gem'
@@ -37,7 +38,19 @@ class Spitball
     @gemfile_lock = gemfile_lock
     @options      = options
     @without      = options[:without].is_a?(Enumerable) ? options[:without].map(&:to_sym) : (options[:without] ? [options[:without].to_sym] : [])
-    @parsed_lockfile, @dsl = Bundler::FakeLockfileParser.new(gemfile_lock), Bundler::FakeDsl.new(gemfile)
+
+    begin
+      @parsed_lockfile = Bundler::FakeLockfileParser.new(gemfile_lock)
+    rescue StandardError => se
+      raise GemfileParsingError, "There was an error parsing your gemfile.lock. Please ensure the file is valid and try again"
+    end
+
+    begin
+      @dsl = Bundler::FakeDsl.new(gemfile)
+    rescue StandardError => se
+      raise GemfileParsingError, "There was an error parsing your Gemfile. Please ensure the file is valid and try again"
+    end
+
     raise "You need to run bundle install before you can use spitball" unless (@parsed_lockfile.dependencies.map{|d| d.name}.uniq.sort == @dsl.__gem_names.uniq.sort)
     @groups_to_install = @dsl.__groups.keys - @without
   end
