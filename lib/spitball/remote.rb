@@ -34,24 +34,29 @@ class Spitball::Remote
   def cache!(sync = true) # ignore sync
     return if cached?
 
-    url = URI.parse("http://#{@host}:#{@port}/create")
-    req = Net::HTTP::Post.new(url.path)
-    req.form_data = {'gemfile' => @gemfile, 'gemfile_lock' => @gemfile_lock}
-    req.add_field Spitball::PROTOCOL_HEADER, Spitball::PROTOCOL_VERSION
-    req.add_field Spitball::WITHOUT_HEADER, @without.join(',')
+    url = "http://#{@host}:#{@port}/create"
+    begin
+      url = URI.parse(url)
+      req = Net::HTTP::Post.new(url.path)
+      req.form_data = {'gemfile' => @gemfile, 'gemfile_lock' => @gemfile_lock}
+      req.add_field Spitball::PROTOCOL_HEADER, Spitball::PROTOCOL_VERSION
+      req.add_field Spitball::WITHOUT_HEADER, @without.join(',')
 
-    res = Net::HTTP.new(url.host, url.port).start do |http|
-      http.read_timeout = 3000
-      http.request(req) {|r| puts r.read_body }
-    end
+      res = Net::HTTP.new(url.host, url.port).start do |http|
+        http.read_timeout = 3000
+        http.request(req) {|r| puts r.read_body }
+      end
 
-    case res.code
-    when '201', '202' # Created, Accepted
-      @tarball_url = res['Location']
-    when '403'
-    else
-      raise Spitball::ServerFailure, "Expected 2xx response code. Got #{res.code}."
-    end
+      case res.code
+      when '201', '202' # Created, Accepted
+        @tarball_url = res['Location']
+      when '301', '302'
+        url = res['Location']
+      when '403'
+      else
+        raise Spitball::ServerFailure, "Expected 2xx response code. Got #{res.code}."
+      end
+    end while @tarball_url.nil?
   rescue URI::InvalidURIError => e
     raise Spitball::ClientError, e.message
   end
@@ -73,9 +78,12 @@ class Spitball::Remote
     else
       uri = URI.parse(location)
 
-      if (res = Net::HTTP.get_response(uri)).code == '200'
+      code = (res = Net::HTTP.get_response(uri)).code
+      if code == '200'
         File.open(cache_file, 'w') {|f| f << res.body}
         return res.body
+      elsif code == '301' || code == '302'
+        return get_tarball_data(res['Location'])
       else
         raise Spitball::ServerFailure, "Spitball download failed."
       end
