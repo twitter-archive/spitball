@@ -300,8 +300,87 @@ describe Spitball do
 
     describe "create_bundle failure" do
       it "should raise on create_bundle" do
+        use_success_bundler
         proc { Spitball.new(@gemfile, @lockfile) }.should raise_error
       end
+    end
+  end
+
+  context "error handling" do
+
+    it "should throw an exception on an invalid Gemfile" do
+
+      gemfile = <<-end_gemfile
+          source :rubygems
+          gem "activerecord"
+          raise 'foo'
+        end_gemfile
+
+      lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{8}/m, "\n")
+        GEM
+          remote: http://rubygems.org/
+          specs:
+            activemodel (3.0.1)
+              activesupport (= 3.0.1)
+              builder (~> 2.1.2)
+              i18n (~> 0.4.1)
+            activerecord (3.0.1)
+              activemodel (= 3.0.1)
+              activesupport (= 3.0.1)
+              arel (~> 1.0.0)
+              tzinfo (~> 0.3.23)
+            activesupport (3.0.1)
+            arel (1.0.1)
+              activesupport (~> 3.0.0)
+            builder (2.1.2)
+            i18n (0.4.2)
+            tzinfo (0.3.23)
+
+        PLATFORMS
+          ruby
+
+        DEPENDENCIES
+          activerecord
+      end_lockfile
+
+      proc { Spitball.new(gemfile, lockfile) }.should raise_error(Spitball::GemfileParsingError, 'There was an error parsing your Gemfile. Please ensure the file is valid and try again')
+    end
+
+    it "should throw an exception on an invalid Gemfile.lock" do
+
+      gemfile = <<-end_gemfile
+          source :rubygems
+          gem "activerecord"
+        end_gemfile
+
+      lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{8}/m, "\n")
+        GGGGEM
+          remote: http://rubygems.org/
+          specs:
+            activemodel (3.0.1)
+              activesupport (= 3.0.1)
+              builder (~> 2.1.2)
+              i18n (~> 0.4.1)
+            activerecord (3.0.1)
+              activemodel (= 3.0.1)
+              activesupport (= 3.0.1)
+              arel (~> 1.0.0)
+              tzinfo (~> 0.3.23)
+            activesupport (3.0.1)
+            arel (1.0.1)
+              activesupport (~> 3.0.0)
+            builder (2.1.2)
+            i18n (0.4.2)
+            tzinfo (0.3.23)
+
+        PLATFORMS
+          ruby
+
+        DEPENDENCIES
+          activerecord
+      end_lockfile
+
+      proc { Spitball.new(gemfile, lockfile) }.should raise_error(Spitball::GemfileParsingError, 'There was an error parsing your gemfile.lock. Please ensure the file is valid and try again')
     end
   end
 end
