@@ -2,8 +2,6 @@ require './spec/spec_helper'
 
 describe Spitball do
   before do
-    use_success_bundler
-
     @gemfile = <<-end_gemfile
         source :rubygems
         gem "json_pure"
