@@ -352,7 +352,7 @@ describe Spitball do
         end_gemfile
 
       lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{8}/m, "\n")
-        GGGGEM
+        SYNTAXERROR
           remote: http://rubygems.org/
           specs:
             activemodel (3.0.1)
