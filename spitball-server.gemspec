@@ -19,6 +19,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_dependency 'json'
+  s.add_dependency 'puma'
   s.add_dependency 'sem_ver'
   s.add_dependency 'sinatra', '~> 1.2.0'
   s.add_development_dependency 'rspec', "~> 1.3.0"

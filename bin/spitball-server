@@ -5,6 +5,9 @@ require 'optparse'
 require 'sinatra'
 require 'json'
 
+
+configure { set :server, :puma }
+
 # cargo culting sinatra's option parser, since it has trouble
 # with rubygem stub files
 
