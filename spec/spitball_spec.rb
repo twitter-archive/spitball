@@ -80,6 +80,16 @@ describe Spitball do
     end
   end
 
+  describe "generate_build_args" do
+    it "returns an empty string for nil" do
+      @spitball.send(:generate_build_args, nil).should == ''
+    end
+
+    it "returns arguments prepended with double dashes for a string" do
+      @spitball.send(:generate_build_args, '--build-args=joesmith').should == '-- --build-args=joesmith'
+    end
+  end
+
   describe "create_bundle" do
     it "generates a bundle at the bundle_path" do
       mock(@spitball).install_gem(anything).times(any_times)
@@ -143,7 +153,7 @@ describe Spitball do
       @spitball.send(:sources_opt, parsed_lockfile.sources).should == "--source http://rubygems.org/"
     end
 
-    it "does not add --clear sources for rubygems >= 1.4.0" do
+    it "adds --clear sources for rubygems >= 1.4.0" do
       @spitball = Spitball.new(@gemfile, @lockfile)
       parsed_lockfile =  @spitball.instance_variable_get("@parsed_lockfile")
       Gem::VERSION = "1.4.0"

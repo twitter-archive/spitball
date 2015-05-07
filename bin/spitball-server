@@ -61,7 +61,7 @@ post '/create' do
   else
     without = request_version = request.env["HTTP_#{Spitball::WITHOUT_HEADER.gsub(/-/, '_').upcase}"]
     without &&= without.split(',')
-    ball = Spitball.new(params['gemfile'], params['gemfile_lock'], :without => without)
+    ball = Spitball.new(params['gemfile'], params['gemfile_lock'], :without => without, :bundle_config => params['bundle_config'])
     url = "#{request.url.split("/create").first}/#{ball.digest}.tgz"
     response['Location'] = url
 

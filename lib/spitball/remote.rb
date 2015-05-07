@@ -12,6 +12,7 @@ class Spitball::Remote
     @port      = opts[:port]
     @without   = (opts[:without] || []).map{|w| w.to_sym}
     @cache_dir = ENV['SPITBALL_CACHE'] || "/tmp/spitball-#{ENV['USER']}/client"
+    @bundle_config = opts[:bundle_config]
     FileUtils.mkdir_p(@cache_dir)
     use_cache_file
   end
@@ -23,7 +24,7 @@ class Spitball::Remote
   end
 
   def cache_file
-    hash = ::Digest::MD5.hexdigest(([@host, @port, @gemfile, @gemfile_lock, Spitball::PROTOCOL_VERSION] + @without).join('/'))
+    hash = ::Digest::MD5.hexdigest(([@host, @port, @gemfile, @gemfile_lock, Spitball::PROTOCOL_VERSION, @bundle_config] + @without).join('/'))
     File.join(@cache_dir, hash)
   end
 
@@ -36,7 +37,9 @@ class Spitball::Remote
 
     url = URI.parse("http://#{@host}:#{@port}/create")
     req = Net::HTTP::Post.new(url.path)
-    req.form_data = {'gemfile' => @gemfile, 'gemfile_lock' => @gemfile_lock}
+    data = {'gemfile' => @gemfile, 'gemfile_lock' => @gemfile_lock}
+    data['bundle_config'] = @bundle_config if @bundle_config
+    req.form_data = data
     req.add_field Spitball::PROTOCOL_HEADER, Spitball::PROTOCOL_VERSION
     req.add_field Spitball::WITHOUT_HEADER, @without.join(',')
 

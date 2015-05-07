@@ -30,6 +30,10 @@ opts = OptionParser.new do |opts|
     args[:without] = without
   end
 
+  opts.on('--bundle-config CONFIG_FILE', 'Pass a bundle-config styled configuration file with build instructions') do |bundle_config|
+    args[:bundle_config] = bundle_config
+  end
+
   opts.on('-g', '--generate-only', "Only generate, don't download") do
     args[:generate] = true
   end
@@ -52,9 +56,11 @@ end
 
 gemfile = File.read(args[:gemfile])
 gemfile_lock = File.read("#{args[:gemfile]}.lock")
+bundle_config = File.read(args[:bundle_config]) if args[:bundle_config]
 
 ball = args[:host] ?
-  Spitball::Remote.new(gemfile, gemfile_lock, :host => args[:host], :port => (args[:port] || 8080).to_i, :without => args[:without]) :
-  Spitball.new(gemfile, gemfile_lock, :without => args[:without])
+  Spitball::Remote.new(gemfile, gemfile_lock, :host => args[:host], :port => (args[:port] || 8080).to_i,
+    :without => args[:without], :bundle_config => bundle_config) :
+  Spitball.new(gemfile, gemfile_lock, :without => args[:without], :bundle_config => bundle_config)
 
 args[:generate] ? ball.cache! : ball.copy_to(args[:destination])
