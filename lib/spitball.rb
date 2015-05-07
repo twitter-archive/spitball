@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'tempfile'
 require 'digest/md5'
 require 'ext/bundler_lockfile_parser'
 require 'ext/bundler_fake_dsl'
@@ -25,6 +26,7 @@ class Spitball
   PROTOCOL_VERSION = '1'
   PROTOCOL_HEADER = "X-Spitball-Protocol"
   WITHOUT_HEADER = "X-Spitball-Without"
+  BUNDLE_CONFIG_ENV = 'BUNDLE_CONFIG'
 
   include Spitball::Digest
   include Spitball::ClientCommon
@@ -38,8 +40,21 @@ class Spitball
     @options      = options
     @without      = options[:without].is_a?(Enumerable) ? options[:without].map(&:to_sym) : (options[:without] ? [options[:without].to_sym] : [])
     @parsed_lockfile, @dsl = Bundler::FakeLockfileParser.new(gemfile_lock), Bundler::FakeDsl.new(gemfile)
+
+    use_bundle_config(options[:bundle_config]) if options[:bundle_config]
+
     raise "You need to run bundle install before you can use spitball" unless (@parsed_lockfile.dependencies.map{|d| d.name}.uniq.sort == @dsl.__gem_names.uniq.sort)
     @groups_to_install = @dsl.__groups.keys - @without
+  end
+
+  def use_bundle_config(bundle_config)
+    tempfile = Tempfile.new('bundle_config')
+    File.open(tempfile.path, 'w') { |f| f.write options[:bundle_config] }
+    original_config_path = ENV[BUNDLE_CONFIG_ENV]
+    ENV[BUNDLE_CONFIG_ENV] = tempfile.path
+    @bundle_config = Bundler::Settings.new
+    tempfile.close
+    ENV[BUNDLE_CONFIG_ENV] = original_config_path
   end
 
   def cached?
@@ -119,12 +134,13 @@ class Spitball
   end
 
   def install_and_copy_spec(name, version)
-    cache_dir = File.join(Repo.gemcache_path, "#{name}-#{::Digest::MD5.hexdigest([name, version, sources_opt(@parsed_lockfile.sources)].join('/'))}")
+    build_args = @bundle_config["build.#{name}"] if @bundle_config
+    cache_dir = File.join(Repo.gemcache_path, "#{name}-#{::Digest::MD5.hexdigest([name, version, sources_opt(@parsed_lockfile.sources), build_args].join('/'))}")
     unless File.exist?(cache_dir)
       FileUtils.mkdir_p(cache_dir)
       out = ""
       Dir.chdir($pwd) do
-        out = `#{Spitball.gem_cmd} install #{name} -v'#{version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(@parsed_lockfile.sources)} 2>&1`
+        out = `#{Spitball.gem_cmd} install #{name} -v'#{version}' --no-rdoc --no-ri --ignore-dependencies -i#{cache_dir} #{sources_opt(@parsed_lockfile.sources)} #{generate_build_args(build_args)} 2>&1`
       end
       if $? == 0
         puts out
@@ -136,6 +152,10 @@ class Spitball
       puts "Using cached version of #{name} (#{version})"
     end
     `cp -R #{cache_dir}/* #{bundle_path}`
+  end
+
+  def generate_build_args(build_args)
+    build_args ? "-- #{build_args}" : ''
   end
 
   def sources_opt(sources)
