@@ -66,12 +66,13 @@ class Spitball
     lock = Spitball::FileLock.new(bundle_path('lock'))
     if lock.acquire_lock
       begin
-       create_bundle
+        create_bundle
       ensure
         lock.release_lock
       end
     elsif sync
-      sleep 0.1 until cached?
+      sleep 0.1
+      cache!
     end
   end
 
