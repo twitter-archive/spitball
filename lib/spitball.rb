@@ -64,14 +64,17 @@ class Spitball
   def cache!(sync = true)
     return if cached?
     lock = Spitball::FileLock.new(bundle_path('lock'))
-    if lock.acquire_lock
+
+    # We check cached again to avoid falling into a race condition
+    if lock.acquire_lock && !cached?
       begin
-       create_bundle
+        create_bundle
       ensure
         lock.release_lock
       end
     elsif sync
-      sleep 0.1 until cached?
+      sleep 0.5
+      cache!
     end
   end
 

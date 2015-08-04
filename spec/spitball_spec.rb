@@ -71,7 +71,7 @@ describe Spitball do
         done_caching = true
       end
 
-      sleep 0.5
+      sleep 0.1
       done_caching.should_not == true
 
       cached = true
