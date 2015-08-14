@@ -169,7 +169,7 @@ class Spitball
         sort.
         map{|s| %w{gemcutter rubygems rubyforge}.include?(s) ? "http://rubygems.org" : s}).
         map{|s| "--source #{s}"}.
-        map{|s| "#{"--clear-sources " if SemVer.parse(Gem::VERSION) >= SemVer.parse('1.4.0') }#{s}"}.
+        map{|s| "#{"--clear-sources " if SemVer.parse(Gem::VERSION.split('.')[0..2].join('.')) >= SemVer.parse('1.4.0') }#{s}"}.
         join(' ')
   end
 
