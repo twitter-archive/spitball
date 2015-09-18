@@ -10,11 +10,10 @@ $: << File.expand_path("../lib", SPEC_DIR)
 
 require 'rubygems'
 require 'fileutils'
-require 'spec'
 require 'spitball'
 require 'phocus'
 
-Spec::Runner.configure do |config|
+RSpec.configure do |config|
   config.mock_with :rr
   config.before do
     purge_test_cache
