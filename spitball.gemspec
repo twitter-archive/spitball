@@ -14,10 +14,10 @@ Gem::Specification.new do |s|
   s.rubyforge_project = "spitball"
 
   s.add_dependency 'sem_ver'
-  s.add_development_dependency 'rspec', "~> 1.3.0"
+  s.add_development_dependency 'rspec'
   s.add_development_dependency 'diff-lcs'
   s.add_development_dependency 'rr'
-  s.add_development_dependency 'rake', '0.8.7'
+  s.add_development_dependency 'rake'
   s.add_development_dependency 'phocus'
 
   s.files            = `git ls-files`.split("\n")

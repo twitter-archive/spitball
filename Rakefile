@@ -3,14 +3,15 @@ VERSION_FILE = File.expand_path("lib/spitball/version.rb", ROOT_DIR)
 
 require 'rubygems' rescue nil
 require 'rake'
-require 'spec/rake/spectask'
 
-task :default => :spec
+begin
+  require 'rspec/core/rake_task'
 
-desc "Run all specs in spec directory."
-Spec::Rake::SpecTask.new(:spec) do |t|
-  t.spec_opts = ['--options', "\"#{ROOT_DIR}/spec/spec.opts\""]
-  t.spec_files = FileList['spec/**/*_spec.rb']
+  RSpec::Core::RakeTask.new(:spec)
+
+  task :default => :spec
+rescue LoadError
+  # no rspec available
 end
 
 require 'bundler'
