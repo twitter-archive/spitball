@@ -27,35 +27,39 @@ describe Spitball do
 
   describe "cached?" do
     it "returns true if the tarball has already been cached" do
-      @spitball.should_not be_cached
-      mock(@spitball).install_gem(anything).times(any_times)
+      expect(@spitball).not_to be_cached
+      expect(@spitball).to receive(:install_gem)
       @spitball.cache!
-      @spitball.should be_cached
+      expect(@spitball).to be_cached
     end
   end
 
   describe "cache!" do
     it "returns if the spitball is cached" do
-      mock(@spitball).cached? { true }
-      mock.instance_of(Spitball::FileLock).acquire_lock.never
-      mock.instance_of(Spitball::FileLock).release_lock.never
-      mock(@spitball).create_bundle(anything).never
-
+      expect(@spitball).to receive(:cached?).and_return(true)
+      expect(Spitball::FileLock).not_to receive(:acuire_lock)
+      expect(Spitball::FileLock).not_to receive(:release_lock)
+      expect(@spitball).not_to receive(:create_bundle)
       @spitball.cache!
     end
 
     it "creates the bundle if it acquires the lock" do
-      mock.instance_of(Spitball::FileLock).acquire_lock { true }
-      mock(@spitball).create_bundle
-      mock.instance_of(Spitball::FileLock).release_lock
+      file_lock = instance_double("Spitball::FileLock")
+
+      expect(@spitball).to receive(:cached?).and_return(false).twice
+      expect(@spitball).to receive(:get_file_lock).and_return(file_lock)
+      expect(file_lock).to receive(:acquire_lock).and_return(true)
+      expect(@spitball).to receive(:create_bundle)
+      expect(file_lock).to receive(:release_lock)
       @spitball.cache!
     end
 
     it "does not create the bundle if it does not acquire the lock" do
-      mock.instance_of(Spitball::FileLock).release_lock.never
-      mock.instance_of(Spitball::FileLock).acquire_lock { false }
-      mock(@spitball).create_bundle.never
-
+      file_lock = instance_double("Spitball::FileLock")
+      expect(@spitball).to receive(:get_file_lock).and_return(file_lock)
+      expect(file_lock).to receive(:acquire_lock).and_return(false)
+      expect(file_lock).not_to receive(:release_lock)
+      expect(@spitball).not_to receive(:create_bundle)
       @spitball.cache!(false)
     end
 
@@ -63,8 +67,11 @@ describe Spitball do
       cached = false
       done_caching = false
 
-      mock.instance_of(Spitball::FileLock).acquire_lock { false }
-      stub(@spitball).cached? { cached }
+      file_lock = instance_double("Spitball::FileLock")
+      expect(@spitball).to receive(:get_file_lock).and_return(file_lock).at_most(3).times
+      expect(@spitball).to receive(:cached?).and_return(false).at_most(2).times
+      expect(@spitball).to receive(:cached?).and_return(true)
+      expect(file_lock).to receive(:acquire_lock).and_return(false).at_most(2).times
 
       t = Thread.new do
         @spitball.cache!
@@ -72,29 +79,30 @@ describe Spitball do
       end
 
       sleep 0.1
-      done_caching.should_not == true
+      expect(done_caching).to be false
 
       cached = true
       t.join
-      done_caching.should == true
+      expect(done_caching).to be true
     end
   end
 
   describe "generate_build_args" do
     it "returns an empty string for nil" do
-      @spitball.send(:generate_build_args, nil).should == ''
+      expect(@spitball.send(:generate_build_args, nil)).to eq('')
     end
 
     it "returns arguments prepended with double dashes for a string" do
-      @spitball.send(:generate_build_args, '--build-args=joesmith').should == '-- --build-args=joesmith'
+      expect(@spitball.send(:generate_build_args, '--build-args=joesmith')).to eq('-- --build-args=joesmith')
     end
   end
 
   describe "create_bundle" do
     it "generates a bundle at the bundle_path" do
-      mock(@spitball).install_gem(anything).times(any_times)
+      expect(@spitball).to receive(:install_gem).at_most(30).times
+
       capture_stdout { @spitball.send :create_bundle }
-      File.exist?(@spitball.send(:tarball_path)).should == true
+      expect(File.exist?(@spitball.send(:tarball_path))).to be true
     end
   end
 
@@ -137,10 +145,13 @@ describe Spitball do
 
     it "should use without" do
       @spitball = Spitball.new(@gemfile, @lockfile)
-      mock(@spitball).install_and_copy_spec(anything, anything).times(9)
+
+      expect(@spitball).to receive(:install_and_copy_spec).exactly(9).times
+
       @spitball.send :create_bundle
       @spitball = Spitball.new(@gemfile, @lockfile, :without => 'development')
-      mock(@spitball).install_and_copy_spec(anything).times(0)
+
+      expect(@spitball).not_to receive(:install_and_copy_spec)
       @spitball.send :create_bundle
     end
   end
@@ -149,15 +160,15 @@ describe Spitball do
     it "does not add --clear sources for rubygems >= 1.4.0" do
       @spitball = Spitball.new(@gemfile, @lockfile)
       parsed_lockfile =  @spitball.instance_variable_get("@parsed_lockfile")
-      Gem::VERSION = "1.3.10"
-      @spitball.send(:sources_opt, parsed_lockfile.sources).should == "--source http://rubygems.org/"
+      stub_const("Gem::VERSION", "1.3.10")
+      expect(@spitball.send(:sources_opt, parsed_lockfile.sources)).to eq("--source http://rubygems.org/")
     end
 
     it "adds --clear sources for rubygems >= 1.4.0" do
       @spitball = Spitball.new(@gemfile, @lockfile)
       parsed_lockfile =  @spitball.instance_variable_get("@parsed_lockfile")
-      Gem::VERSION = "1.4.0"
-      @spitball.send(:sources_opt, parsed_lockfile.sources).should == "--clear-sources --source http://rubygems.org/"
+      stub_const("Gem::VERSION", "1.4.0")
+      expect(@spitball.send(:sources_opt, parsed_lockfile.sources)).to eq("--clear-sources --source http://rubygems.org/")
     end
   end
 end
@@ -171,14 +182,14 @@ describe Spitball::FileLock do
     end
 
     it "returns true if the lock is acquired" do
-      @lock.acquire_lock.should == true
+      expect(@lock.acquire_lock).to be true
     end
 
     it "returns false if the lock is not acquired" do
       fork { @lock.acquire_lock; exit! }
       Process.wait
 
-      @lock.acquire_lock.should == false
+      expect(@lock.acquire_lock).to be false
     end
   end
 end
@@ -192,49 +203,50 @@ describe Spitball::Repo do
     it "creates the correct cache dir" do
       FileUtils.rm_rf(SPITBALL_CACHE)
 
-      File.exist?(SPITBALL_CACHE).should_not == true
+      expect(File.exist?(SPITBALL_CACHE)).to be false
       Spitball::Repo.make_cache_dirs
-      File.exist?(SPITBALL_CACHE).should == true
+      expect(File.exist?(SPITBALL_CACHE)).to be true
     end
   end
 
   describe "bundle_path" do
     it "generates paths with the correct cache" do
-      Spitball::Repo.bundle_path('digest').should =~ %r[^#{SPITBALL_CACHE}]
+      expect(Spitball::Repo.bundle_path('digest')).to match /^#{SPITBALL_CACHE}/
     end
 
     it "generates paths with extensions" do
-      Spitball::Repo.bundle_path('digest', 'tgz').should =~ %r[\.tgz$]
+      expect(Spitball::Repo.bundle_path('digest', 'tgz')).to match /\.tgz$/
     end
 
     it "generates paths prefixed with bundle_" do
-      Spitball::Repo.bundle_path('digest', 'tgz').should =~ %r[bundle_digest\.tgz$]
+      expect(Spitball::Repo.bundle_path('digest', 'tgz')).to match /bundle_digest\.tgz$/
     end
   end
 
   describe "gemcache_path" do
     it "returns the correct path in the cache dir" do
-      Spitball::Repo.gemcache_path.should == File.join(SPITBALL_CACHE, "gemcache")
+      expect(Spitball::Repo.gemcache_path).to eq(File.join(SPITBALL_CACHE, "gemcache"))
     end
   end
 
   describe "exist?" do
     it "returns true if tarball for a digest exists" do
-      Spitball::Repo.exist?('digest').should_not == true
+      expect(Spitball::Repo.exist?('digest')).to be false
       File.open(Spitball::Repo.bundle_path('digest', 'tgz'), 'w') {|f| f.write 'tarball!' }
-      Spitball::Repo.exist?('digest').should == true
+      expect(Spitball::Repo.exist?('digest')).to be true
     end
   end
 
   describe "tarball" do
     it "returns the path of the cached tarball for a digest" do
-      Spitball::Repo.tarball('digest').should == Spitball::Repo.bundle_path('digest', 'tgz')
+      expect(Spitball::Repo.tarball('digest')).to eq(Spitball::Repo.bundle_path('digest', 'tgz'))
     end
   end
 
   describe "gemfile" do
     it "returns the path of the cached gemfile for a digest" do
-      Spitball::Repo.gemfile('digest').should == Spitball::Repo.bundle_path('digest', 'gemfile')
+      expect(Spitball::Repo.gemfile('digest')).to eq(
+        Spitball::Repo.bundle_path('digest', 'gemfile'))
     end
   end
 
@@ -243,7 +255,7 @@ describe Spitball::Repo do
       File.open(Spitball::Repo.tarball('digest'), 'w') {|f| f.write 'tarball!' }
       File.open(Spitball::Repo.tarball('digest2'), 'w') {|f| f.write 'tarball2!' }
 
-      Spitball::Repo.cached_digests.should == ['digest', 'digest2']
+      expect(Spitball::Repo.cached_digests).to eq(['digest', 'digest2'])
     end
   end
 
@@ -252,33 +264,34 @@ describe Spitball::Repo do
       File.open(Spitball::Repo.tarball('digest'), 'w') {|f| f.write 'tarball!' }
       File.open(Spitball::Repo.gemfile('digest'), 'w') {|f| f.write 'gemfile!' }
 
-      sleep 2
+      sleep 3
       File.open(Spitball::Repo.tarball('digest2'), 'w') {|f| f.write 'tarball2!' }
       File.open(Spitball::Repo.gemfile('digest2'), 'w') {|f| f.write 'gemfile2!' }
 
       Spitball::Repo.clean_up_unused(1)
 
-      File.exist?(Spitball::Repo.tarball('digest')).should_not == true
-      File.exist?(Spitball::Repo.gemfile('digest')).should_not == true
-      File.exist?(Spitball::Repo.tarball('digest2')).should == true
-      File.exist?(Spitball::Repo.gemfile('digest2')).should == true
+      expect(File.exist?(Spitball::Repo.tarball('digest'))).to be false
+      expect(File.exist?(Spitball::Repo.gemfile('digest'))).to be false
+      expect(File.exist?(Spitball::Repo.tarball('digest2'))).to be true
+      expect(File.exist?(Spitball::Repo.gemfile('digest2'))).to be true
     end
   end
 end
 
 describe Spitball::Digest do
   it "generates a digest based on the spitball's options and gemfile" do
-    [Spitball.new('gemfile contents', 'gemlock', :without => "system").digest,
-     Spitball.new('gemfile contents 2', 'gemlock', :without => "system").digest,
-     Spitball.new('gemfile', 'gemlock', :without => "other_group").digest,
-     Spitball.new('gemfile', 'gemlock').digest,
-     Spitball.new('gemfile', 'gemlock2').digest
-    ].uniq.length.should == 4
+    expect([
+      Spitball.new('gemfile contents', 'gemlock', :without => "system").digest,
+      Spitball.new('gemfile contents 2', 'gemlock', :without => "system").digest,
+      Spitball.new('gemfile', 'gemlock', :without => "other_group").digest,
+      Spitball.new('gemfile', 'gemlock').digest,
+      Spitball.new('gemfile', 'gemlock2').digest
+    ].uniq.length).to eq(4)
   end
 
   it "provides a hash equal to the digest's hash"do
     spitball = Spitball.new('gemfile contents', 'gemlock contents')
-    spitball.hash.should == spitball.digest.hash
+    expect(spitball.hash).to eq(spitball.digest.hash)
   end
 end
 
@@ -310,7 +323,9 @@ describe Spitball do
 
     describe "create_bundle failure" do
       it "should raise on create_bundle" do
-        proc { Spitball.new(@gemfile, @lockfile) }.should raise_error
+        expect {
+          Spitball.new(@gemfile, @lockfile)
+        }.to raise_error(StandardError)
       end
     end
   end
@@ -329,7 +344,7 @@ describe Bundler::FakeDsl do
       end_gemfile
 
     dsl = Bundler::FakeDsl.new(gemfile)
-    dsl.__groups[:development].should == ["rails", "json_pure"]
+    expect(dsl.__groups[:development]).to eq(["rails", "json_pure"])
   end
 
   it "should support multiple groups in one line" do
@@ -344,8 +359,8 @@ describe Bundler::FakeDsl do
       end_gemfile
 
     dsl = Bundler::FakeDsl.new(gemfile)
-    dsl.__groups[:development].should == ["rails", "json_pure"]
-    dsl.__groups[:test].should == ["rails", "json_pure"]
+    expect(dsl.__groups[:development]).to eq(["rails", "json_pure"])
+    expect(dsl.__groups[:test]).to eq(["rails", "json_pure"])
   end
 
   it "should support multiple groups on several lines" do
@@ -363,7 +378,7 @@ describe Bundler::FakeDsl do
       end_gemfile
 
     dsl = Bundler::FakeDsl.new(gemfile)
-    dsl.__groups[:development].should == ["rails"]
-    dsl.__groups[:test].should == ["json_pure"]
+    expect(dsl.__groups[:development]).to eq(["rails"])
+    expect(dsl.__groups[:test]).to eq(["json_pure"])
   end
 end

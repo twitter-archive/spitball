@@ -14,7 +14,7 @@ require 'spitball'
 require 'phocus'
 
 RSpec.configure do |config|
-  config.mock_with :rr
+  config.mock_with :rspec
   config.before do
     purge_test_cache
     purge_bin

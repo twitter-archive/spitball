@@ -61,9 +61,13 @@ class Spitball
     File.exist? tarball_path
   end
 
+  def get_file_lock
+    Spitball::FileLock.new(bundle_path('lock'))
+  end
+
   def cache!(sync = true)
     return if cached?
-    lock = Spitball::FileLock.new(bundle_path('lock'))
+    lock = get_file_lock
 
     # We check cached again to avoid falling into a race condition
     if lock.acquire_lock && !cached?
