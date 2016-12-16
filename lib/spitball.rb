@@ -91,6 +91,15 @@ class Spitball
     FileUtils.cp(tarball_path, dest)
   end
 
+  def get_specs(gemfile_path, gemfile_lock_path)
+    ENV["BUNDLE_GEMFILE"] = gemfile_path
+    Bundler.settings[:frozen] = true
+    definition = Bundler::Definition.build(gemfile_path, gemfile_lock_path, nil)
+    definition.resolve_remotely!
+
+    definition.specs_for(@groups_to_install)
+  end
+
   def create_bundle
     Spitball::Repo.make_cache_dirs
     FileUtils.mkdir_p bundle_path
@@ -100,9 +109,7 @@ class Spitball
     File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
 
     Dir.chdir(Repo.gemcache_path) do
-      ENV["BUNDLE_GEMFILE"] = gemfile_path
-      definition = Bundler.definition(nil)
-      specs = definition.specs_for(@groups_to_install)
+      specs = get_specs(gemfile_path, gemfile_lock_path)
       specs.each do |spec|
         install_and_copy_spec(spec.name, spec.version.to_s)
       end

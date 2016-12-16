@@ -28,7 +28,7 @@ describe Spitball do
   describe "cached?" do
     it "returns true if the tarball has already been cached" do
       expect(@spitball).not_to be_cached
-      expect(@spitball).to receive(:install_gem)
+      expect(@spitball).to receive(:get_specs).and_return([])
       @spitball.cache!
       expect(@spitball).to be_cached
     end
@@ -99,8 +99,7 @@ describe Spitball do
 
   describe "create_bundle" do
     it "generates a bundle at the bundle_path" do
-      expect(@spitball).to receive(:install_gem).at_most(30).times
-
+      expect(@spitball).to receive(:get_specs).and_return([])
       capture_stdout { @spitball.send :create_bundle }
       expect(File.exist?(@spitball.send(:tarball_path))).to be true
     end
@@ -146,12 +145,12 @@ describe Spitball do
     it "should use without" do
       @spitball = Spitball.new(@gemfile, @lockfile)
 
-      expect(@spitball).to receive(:install_and_copy_spec).exactly(9).times
+      expect(@spitball).to receive(:install_and_copy_spec).exactly(8).times
 
       @spitball.send :create_bundle
       @spitball = Spitball.new(@gemfile, @lockfile, :without => 'development')
 
-      expect(@spitball).not_to receive(:install_and_copy_spec)
+      expect(@spitball).to receive(:install_and_copy_spec).exactly(1).times
       @spitball.send :create_bundle
     end
   end
