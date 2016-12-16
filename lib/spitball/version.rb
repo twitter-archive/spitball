@@ -1,3 +1,3 @@
 class Spitball
-  VERSION = '0.8.2' unless const_defined?(:VERSION)
+  VERSION = '1.0.0.beta1' unless const_defined?(:VERSION)
 end

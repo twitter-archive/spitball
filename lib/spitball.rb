@@ -4,6 +4,7 @@ require 'digest/md5'
 require 'ext/bundler_lockfile_parser'
 require 'ext/bundler_fake_dsl'
 require 'sem_ver'
+require 'bundler'
 
 $pwd = Dir.pwd
 
@@ -44,7 +45,8 @@ class Spitball
     use_bundle_config(options[:bundle_config]) if options[:bundle_config]
 
     raise "You need to run bundle install before you can use spitball" unless (@parsed_lockfile.dependencies.map{|d| d.name}.uniq.sort == @dsl.__gem_names.uniq.sort)
-    @groups_to_install = @dsl.__groups.keys - @without
+    all_groups = @dsl.__groups.keys.compact + [:default]
+    @groups_to_install = all_groups - @without
   end
 
   def use_bundle_config(bundle_config)
@@ -98,17 +100,11 @@ class Spitball
     File.open(gemfile_lock_path, 'w') {|f| f.write gemfile_lock }
 
     Dir.chdir(Repo.gemcache_path) do
-      @dsl.__gem_names.each do |spec|
-        spec_name = spec
-        if @groups_to_install.any?{|group| @dsl.__groups[group].include?(spec_name)}
-          if found_spec = @parsed_lockfile.specs.find {|spec| spec.name == spec_name}
-            install_gem(found_spec)
-          elsif spec_name == 'bundler'
-            install_and_copy_spec(spec_name, '>= 0')
-          else
-            raise "Cannot install #{spec * ' '}"
-          end
-        end
+      ENV["BUNDLE_GEMFILE"] = gemfile_path
+      definition = Bundler.definition(nil)
+      specs = definition.specs_for(@groups_to_install)
+      specs.each do |spec|
+        install_and_copy_spec(spec.name, spec.version.to_s)
       end
     end
 
@@ -124,20 +120,6 @@ class Spitball
     system "tar czf #{tarball_path}.#{Process.pid} -C #{bundle_path} ."
     system "mv #{tarball_path}.#{Process.pid} #{tarball_path}"
     FileUtils.rm_rf bundle_path
-  end
-
-  def install_gem(spec)
-    install_and_copy_spec(spec.name, spec.version)
-    spec.dependencies.each do |dep|
-      spec_name = dep.name
-      if found_spec = @parsed_lockfile.specs.find {|spec| spec.name == spec_name}
-        install_gem(found_spec)
-      elsif spec_name == 'bundler'
-        install_and_copy_spec(dep.name, dep.requirements_list.first || '> 0')
-      else
-        raise "Cannot install #{dep.inspect}"
-      end
-    end
   end
 
   def install_and_copy_spec(name, version)
