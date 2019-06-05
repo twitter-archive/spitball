@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Matt Freels", "Brandon Mitchell", "Joshua Hull"]
   s.email       = "freels@twitter.com"
-  s.homepage    = "http://github.com/twitter/spitball"
+  s.homepage    = "https://github.com/twitter/spitball"
   s.summary     = %q{Use bundler to generate gem tarball packages}
   s.description = %q{Use bundler to generate gem tarball packages.}
 
