@@ -11,7 +11,7 @@ describe Spitball do
 
     @lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{6}/m, "\n")
       GEM
-        remote: https://rubygems.org/
+        remote: http://rubygems.org/
         specs:
           json_pure (1.4.6)
 
@@ -116,7 +116,7 @@ describe Spitball do
 
       @lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{8}/m, "\n")
         GEM
-          remote: https://rubygems.org/
+          remote: http://rubygems.org/
           specs:
             activemodel (3.0.1)
               activesupport (= 3.0.1)
@@ -160,14 +160,14 @@ describe Spitball do
       @spitball = Spitball.new(@gemfile, @lockfile)
       parsed_lockfile =  @spitball.instance_variable_get("@parsed_lockfile")
       stub_const("Gem::VERSION", "1.3.10")
-      expect(@spitball.send(:sources_opt, parsed_lockfile.sources)).to eq("--source https://rubygems.org/")
+      expect(@spitball.send(:sources_opt, parsed_lockfile.sources)).to eq("--source http://rubygems.org/")
     end
 
     it "adds --clear sources for rubygems >= 1.4.0" do
       @spitball = Spitball.new(@gemfile, @lockfile)
       parsed_lockfile =  @spitball.instance_variable_get("@parsed_lockfile")
       stub_const("Gem::VERSION", "1.4.0")
-      expect(@spitball.send(:sources_opt, parsed_lockfile.sources)).to eq("--clear-sources --source https://rubygems.org/")
+      expect(@spitball.send(:sources_opt, parsed_lockfile.sources)).to eq("--clear-sources --source http://rubygems.org/")
     end
   end
 end
@@ -307,7 +307,7 @@ describe Spitball do
 
       @lockfile = <<-end_lockfile.strip.gsub(/\n[ ]{6}/m, "\n")
         GEM
-          remote: https://rubygems.org/
+          remote: http://rubygems.org/
           specs:
             json_pure (1.4.6)
 

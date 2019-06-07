@@ -35,7 +35,7 @@ class Spitball::Remote
   def cache!(sync = true) # ignore sync
     return if cached?
 
-    url = URI.parse("https://#{@host}:#{@port}/create")
+    url = URI.parse("http://#{@host}:#{@port}/create")
     req = Net::HTTP::Post.new(url.path)
     data = {'gemfile' => @gemfile, 'gemfile_lock' => @gemfile_lock}
     data['bundle_config'] = @bundle_config if @bundle_config
