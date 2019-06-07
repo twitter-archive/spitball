@@ -56,7 +56,7 @@ project:
 
 4. Push your topic branch up to your fork:
 
-5. [Open a Pull Request](http://help.github.com/send-pull-requests/) with a
+5. [Open a Pull Request](https://help.github.com/send-pull-requests/) with a
    clear title and description.
 
 ## License
