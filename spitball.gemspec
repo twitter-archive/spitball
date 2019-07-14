@@ -11,8 +11,6 @@ Gem::Specification.new do |s|
   s.summary     = %q{Use bundler to generate gem tarball packages}
   s.description = %q{Use bundler to generate gem tarball packages.}
 
-  s.rubyforge_project = "spitball"
-
   s.add_dependency 'sem_ver'
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'diff-lcs'
